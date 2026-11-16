@@ -1,0 +1,11 @@
+{
+  "name": "trosso-pos",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "setup": "cd server && npm install && cd ../client && npm install",
+    "db:init": "psql %DATABASE_URL% -f server/db/schema.sql"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

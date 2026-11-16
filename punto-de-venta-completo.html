@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Punto de Venta</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--pr:#f87839;--prh:#e06520;--bg:#f7f8fa;--panel:#fff;--border:#e5e7eb;--text:#1a1a2e;--muted:#6b7280;--ok:#10b981;--err:#ef4444;--warn:#f59e0b;--side:230px;--top:56px}
+body{font-family:Inter,sans-serif;background:var(--bg);color:var(--text);font-size:15px;-webkit-tap-highlight-color:transparent}
+#app{display:flex;min-height:100vh}
+.sidebar{width:var(--side);background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.sidebar-logo{padding:18px 20px;font-weight:700;font-size:16px;color:var(--pr);border-bottom:1px solid var(--border)}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:13px 20px;min-height:50px;cursor:pointer;border-radius:10px;margin:2px 8px;font-size:14px;color:var(--muted);transition:.15s;touch-action:manipulation}
+.nav-item:hover{background:#f3f4f6;color:var(--text)}
+.nav-item.active{background:#fff4ee;color:var(--pr);font-weight:600}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
+.main{margin-left:var(--side);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:var(--top);background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:50}
+.topbar-title{font-weight:600;font-size:16px;flex:1}
+.content{padding:24px;flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:11px 20px;min-height:46px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:500;font-family:inherit;transition:.15s;touch-action:manipulation}
+.btn-primary{background:var(--pr);color:#fff}.btn-primary:hover{background:var(--prh)}
+.btn-secondary{background:#f3f4f6;color:var(--text)}.btn-secondary:hover{background:#e5e7eb}
+.btn-danger{background:var(--err);color:#fff}.btn-danger:hover{background:#dc2626}
+.btn-sm{padding:9px 16px;font-size:13px;min-height:40px}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-ghost:hover{background:#f3f4f6}
+.card{background:var(--panel);border-radius:13px;border:1px solid var(--border);padding:20px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.kpi{background:var(--panel);border-radius:13px;border:1px solid var(--border);padding:20px}
+.kpi-label{font-size:12px;color:var(--muted);margin-bottom:4px}
+.kpi-value{font-size:26px;font-weight:700}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 12px;font-size:12px;color:var(--muted);border-bottom:2px solid var(--border);font-weight:600;text-transform:uppercase}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-ok{background:#d1fae5;color:#065f46}
+.badge-err{background:#fee2e2;color:#991b1b}
+.badge-warn{background:#fef3c7;color:#92400e}
+.badge-info{background:#dbeafe;color:#1e40af}
+.badge-gray{background:#f3f4f6;color:var(--muted)}
+input,select,textarea{font-family:inherit;font-size:15px;padding:11px 14px;border:1px solid var(--border);border-radius:10px;outline:none;width:100%;color:var(--text);background:#fff;transition:.15s;min-height:46px}
+input:focus,select:focus,textarea:focus{border-color:var(--pr);box-shadow:0 0 0 3px #f8783820}
+label{display:block;font-size:12px;font-weight:500;margin-bottom:4px;color:var(--muted)}
+.field{margin-bottom:14px}
+.modal-overlay{display:none;position:fixed;inset:0;background:#0006;z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--panel);border-radius:16px;padding:24px;width:90%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-lg{max-width:680px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{cursor:pointer;font-size:20px;color:var(--muted);background:none;border:none;padding:0;line-height:1}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#toast-container{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;min-width:200px;animation:slideIn .2s ease;box-shadow:0 4px 12px #0002}
+.toast-ok{background:#065f46;color:#fff}.toast-err{background:#991b1b;color:#fff}.toast-warn{background:#92400e;color:#fff}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.section-title{font-size:18px;font-weight:700}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:10px 20px;border-radius:20px;border:1px solid var(--border);cursor:pointer;font-size:13px;font-weight:500;background:#fff;color:var(--muted);min-height:42px;display:inline-flex;align-items:center;touch-action:manipulation}
+.chip.active{background:var(--pr);color:#fff;border-color:var(--pr)}
+.pos-layout{display:grid;grid-template-columns:1fr 390px;gap:16px;height:calc(100vh - var(--top) - 48px)}
+.pos-left{display:flex;flex-direction:column;min-height:0}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;overflow-y:auto;align-content:start;flex:1;padding-bottom:8px}
+.product-card{background:var(--panel);border:2px solid var(--border);border-radius:16px;padding:18px 14px;cursor:pointer;transition:.15s;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:120px;display:flex;flex-direction:column;justify-content:space-between}
+.product-card:hover,.product-card:active{border-color:var(--pr);box-shadow:0 4px 16px #f8783830;transform:scale(.98)}
+.pc-emoji{font-size:32px;margin-bottom:8px;line-height:1}
+.pc-name{font-weight:600;font-size:14px;margin-bottom:6px;line-height:1.3}
+.pc-price{color:var(--pr);font-weight:700;font-size:17px}
+.pc-stock{font-size:12px;color:var(--muted);margin-top:3px}
+.cart-panel{background:var(--panel);border-radius:13px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.cart-header{padding:14px 16px;border-bottom:1px solid var(--border)}
+.cart-items{flex:1;overflow-y:auto;padding:8px}
+.cart-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;min-height:60px}
+.cart-item:hover{background:#f9fafb}
+.ci-name{flex:1;font-size:14px;font-weight:600;min-width:0;line-height:1.3}
+.qty-ctrl{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.qty-btn{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;line-height:1;touch-action:manipulation;flex-shrink:0}
+.qty-btn:hover,.qty-btn:active{background:var(--pr);color:#fff;border-color:var(--pr)}
+.qty-num{width:34px;text-align:center;font-weight:700;font-size:16px}
+.ci-sub{font-size:14px;font-weight:700;min-width:65px;text-align:right;flex-shrink:0}
+.cart-remove{color:var(--muted);cursor:pointer;font-size:18px;width:38px;height:38px;border-radius:8px;background:none;border:none;font-family:inherit;display:flex;align-items:center;justify-content:center;touch-action:manipulation;flex-shrink:0}
+.cart-remove:hover,.cart-remove:active{color:var(--err);background:#fee2e2}
+.cart-totals{padding:14px 16px;border-top:1px solid var(--border);background:#fafafa}
+.total-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px;color:var(--muted)}
+.total-row.main{font-size:20px;font-weight:700;color:var(--text);margin-top:10px;padding-top:10px;border-top:2px solid var(--border)}
+.segmented{display:flex;background:#f3f4f6;border-radius:10px;padding:3px;gap:2px;margin-bottom:14px}
+.seg-btn{flex:1;padding:12px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;font-family:inherit;color:var(--muted);transition:.15s;min-height:46px;touch-action:manipulation}
+.seg-btn.active{background:#fff;color:var(--pr);box-shadow:0 1px 4px #0002;font-weight:700}
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#fff4ee,#f7f8fa)}
+.login-card{background:#fff;border-radius:24px;padding:40px 36px;width:100%;max-width:480px;border:1px solid var(--border);text-align:center;box-shadow:0 12px 48px #0002}
+.pin-display{font-size:32px;letter-spacing:16px;padding:18px;background:#f3f4f6;border-radius:14px;min-height:72px;margin:16px 0;font-weight:700;display:flex;align-items:center;justify-content:center}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.pin-key{padding:0;height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:24px;font-weight:600;font-family:inherit;transition:.15s;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+.pin-key:hover,.pin-key:active{background:var(--pr);color:#fff;border-color:var(--pr);transform:scale(.96)}
+.user-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.user-btn{padding:14px 18px;min-height:64px;border-radius:14px;border:2px solid var(--border);background:#fff;cursor:pointer;text-align:left;font-family:inherit;font-size:15px;transition:.15s;display:flex;align-items:center;gap:14px;width:100%;touch-action:manipulation}
+.user-btn:hover,.user-btn.active{border-color:var(--pr);background:#fff4ee}
+.user-avatar{width:46px;height:46px;border-radius:50%;background:var(--pr);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
+.chart-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+.empty{text-align:center;padding:40px;color:var(--muted)}
+.row-actions{display:flex;gap:6px}
+.filters-row{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.filters-row input,.filters-row select{width:auto}
+/* ── TABLET CAJERO MODE ── */
+.cashier-mode .sidebar{display:none}
+.cashier-mode .main{margin-left:0}
+.cashier-mode .content{padding-bottom:84px}
+.cashier-mode .pos-layout{height:calc(100vh - var(--top) - 84px)}
+.bottom-nav{display:none}
+.cashier-mode .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:2px solid var(--border);z-index:100;height:72px;padding:0 8px}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:transparent;font-family:inherit;color:var(--muted);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;padding:8px 4px;border-radius:12px;transition:.15s;position:relative}
+.bnav-item:active{background:#f3f4f6}
+.bnav-item.active{color:var(--pr)}
+.bnav-item.active::after{content:'';position:absolute;bottom:4px;width:24px;height:3px;background:var(--pr);border-radius:2px}
+.bnav-icon{font-size:24px;line-height:1}
+.bnav-label{font-size:11px;font-weight:600;letter-spacing:.01em}
+/* Checkout modal tablet */
+.pay-method-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.pay-method-btn{padding:16px;border-radius:14px;border:2px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:15px;font-weight:600;text-align:center;transition:.15s;touch-action:manipulation;min-height:64px}
+.pay-method-btn:active,.pay-method-btn.selected{border-color:var(--pr);background:#fff4ee;color:var(--pr)}
+.numpad-wrap{background:#f9fafb;border-radius:14px;padding:14px;margin-bottom:14px}
+.numpad-amount{font-size:28px;font-weight:700;text-align:right;padding:10px 14px;background:#fff;border-radius:10px;margin-bottom:12px;border:2px solid var(--border);min-height:56px;display:flex;align-items:center;justify-content:flex-end;overflow:hidden}
+.numpad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.nk{height:56px;border-radius:12px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:20px;font-weight:600;font-family:inherit;touch-action:manipulation;transition:.15s}
+.nk:active{background:var(--pr);color:#fff;border-color:var(--pr);transform:scale(.95)}
+.nk-special{background:#f3f4f6;font-size:16px}
+.change-display{text-align:center;padding:10px;border-radius:10px;font-size:16px;font-weight:700;margin-bottom:12px}
+.change-ok{background:#d1fae5;color:#065f46}
+.change-low{background:#fee2e2;color:#991b1b}
+/* Toast bigger for tablet */
+.toast{padding:14px 22px;font-size:15px;min-width:240px}
+/* Cart totals */
+.cart-totals{padding:16px;border-top:2px solid var(--border);background:#fafafa}
+.cobrar-btn{width:100%;padding:18px;font-size:18px;font-weight:700;border-radius:14px;border:none;background:var(--pr);color:#fff;cursor:pointer;font-family:inherit;touch-action:manipulation;transition:.15s;margin-top:12px}
+.cobrar-btn:active{background:var(--prh);transform:scale(.98)}
+.cobrar-btn:disabled{background:#d1d5db;cursor:not-allowed;transform:none}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast-container"></div>
+<script>
+const KEY='prototipo-punto-ventas:v1';
+const METHODS=['Efectivo','Transferencia','Tarjeta','Junaeb'];
+const EXP_CATS=['Arriendo','Servicios','Insumos','Personal','Marketing','Otros'];
+let state=null;
+let _charts={};
+
+function saveState(){localStorage.setItem(KEY,JSON.stringify(state));}
+function loadState(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return null;}
+
+function createSeed(){
+  const now=new Date();
+  const dAgo=n=>{const d=new Date(now);d.setDate(d.getDate()-n);return d.toISOString();};
+  const products=[
+    {id:'p1',name:'Café Americano',category:'Bebidas',price:1500,cost:300,stock:999,minStock:10,unit:'unidad',sku:'CAF001',active:true},
+    {id:'p2',name:'Café Latte',category:'Bebidas',price:2200,cost:500,stock:999,minStock:10,unit:'unidad',sku:'CAF002',active:true},
+    {id:'p3',name:'Té Verde',category:'Bebidas',price:1200,cost:200,stock:999,minStock:10,unit:'unidad',sku:'TE001',active:true},
+    {id:'p4',name:'Jugo Natural',category:'Bebidas',price:2500,cost:600,stock:50,minStock:5,unit:'unidad',sku:'JUG001',active:true},
+    {id:'p5',name:'Agua Mineral',category:'Bebidas',price:800,cost:200,stock:100,minStock:20,unit:'unidad',sku:'AGU001',active:true},
+    {id:'p6',name:'Sándwich Vegetal',category:'Comidas',price:3500,cost:1200,stock:30,minStock:5,unit:'unidad',sku:'SAN001',active:true},
+    {id:'p7',name:'Empanada de Pino',category:'Comidas',price:2000,cost:700,stock:40,minStock:10,unit:'unidad',sku:'EMP001',active:true},
+    {id:'p8',name:'Tostada con Palta',category:'Comidas',price:2800,cost:900,stock:999,minStock:5,unit:'unidad',sku:'TOS001',active:true},
+    {id:'p9',name:'Brownie',category:'Postres',price:1800,cost:500,stock:20,minStock:5,unit:'unidad',sku:'BRW001',active:true},
+    {id:'p10',name:'Cheesecake',category:'Postres',price:2500,cost:800,stock:15,minStock:3,unit:'unidad',sku:'CHE001',active:true},
+    {id:'p11',name:'Muffin',category:'Postres',price:1500,cost:400,stock:25,minStock:5,unit:'unidad',sku:'MUF001',active:true},
+    {id:'p12',name:'Galleta',category:'Postres',price:800,cost:200,stock:60,minStock:15,unit:'unidad',sku:'GAL001',active:true},
+  ];
+  const users=[
+    {id:'u1',name:'Administrador',email:'admin@demo.cl',role:'Administrador',pin:'1234',active:true},
+    {id:'u2',name:'Juan Cajero',email:'juan@demo.cl',role:'Cajero',pin:'5678',active:true},
+    {id:'u3',name:'María Cajera',email:'maria@demo.cl',role:'Cajero',pin:'9012',active:true},
+  ];
+  const customers=[
+    {id:'c1',name:'Cliente General',email:'',phone:'',rut:'',address:'',active:true},
+    {id:'c2',name:'Empresa ABC',email:'compras@abc.cl',phone:'+56 2 2222 3333',rut:'77.111.111-1',address:'Av. Libertad 456',active:true},
+    {id:'c3',name:'María González',email:'mgonzalez@gmail.com',phone:'+56 9 8765 4321',rut:'12.345.678-9',address:'',active:true},
+  ];
+  const promotions=[
+    {id:'pr1',name:'Descuento Café Latte',productId:'p2',type:'percent',value:10,active:true,startDate:'2026-01-01',endDate:'2026-12-31'},
+  ];
+  const sales=[];let saleNum=1001;
+  const rng=n=>Math.floor(Math.random()*n);
+  for(let d=65;d>=1;d--){
+    const count=5+rng(10);
+    for(let i=0;i<count;i++){
+      const nI=1+rng(3);const items=[];const used=new Set();
+      for(let j=0;j<nI;j++){
+        let p;do{p=products[rng(products.length)];}while(used.has(p.id));
+        used.add(p.id);
+        const qty=1+rng(2);
+        const promo=promotions.find(pr=>pr.active&&pr.productId===p.id);
+        const lt=p.price*qty;
+        const disc=promo?(promo.type==='percent'?Math.round(lt*promo.value/100):0):0;
+        items.push({productId:p.id,name:p.name,qty,price:p.price,discount:disc,subtotal:lt-disc});
+      }
+      const sub=items.reduce((s,x)=>s+x.price*x.qty,0);
+      const disc=items.reduce((s,x)=>s+x.discount,0);
+      const total=sub-disc;
+      const r2=rng(100);
+      const method=r2<60?'Efectivo':r2<85?'Transferencia':'Tarjeta';
+      const r3=rng(100);
+      const custId=r3<80?'c1':r3<90?'c2':'c3';
+      const hrs=8+rng(10);const mins=rng(60);
+      const dateStr=new Date(now.getFullYear(),now.getMonth(),now.getDate()-d,hrs,mins).toISOString();
+      sales.push({id:'s'+d+'_'+i,number:saleNum++,date:dateStr,items,subtotal:sub,discount:disc,total,
+        payment:{method,amount:total,change:0},customerId:custId,
+        channel:rng(2)?'Al paso':'Delivery',userId:users[rng(users.length)].id,
+        status:'completed',shiftId:null,void:false,voidReason:null});
+    }
+  }
+  return{
+    version:1,
+    settings:{businessName:'Demo Café',rut:'76.000.000-0',address:'Calle Demo 123',phone:'+56 9 0000 0000',currency:'CLP',receiptFooter:'¡Gracias por su visita!'},
+    products,categories:['Bebidas','Comidas','Postres','Otros'],
+    users,customers,
+    suppliers:[
+      {id:'s1',name:'Distribuidora Norte',contact:'Pedro López',email:'pedro@dnorte.cl',phone:'+56 9 1111 2222',rut:'88.000.000-0',active:true},
+      {id:'s2',name:'Cafés Especiales Ltda',contact:'Ana Ruiz',email:'ana@cafes.cl',phone:'+56 9 3333 4444',rut:'88.111.111-1',active:true},
+    ],
+    promotions,
+    recipes:[
+      {id:'r1',name:'Café Latte',productId:'p2',ingredients:[{productId:'p1',qty:1,unit:'unidad'}],notes:'Base espresso con leche'},
+      {id:'r2',name:'Jugo Natural',productId:'p4',ingredients:[{productId:'p5',qty:1,unit:'unidad'}],notes:'Jugo natural exprimido'},
+    ],
+    sales,movements:[],shifts:[],stockMovements:[],
+    purchases:[{id:'pur1',supplierId:'s1',date:dAgo(30),
+      items:[{productId:'p1',qty:100,unitCost:300},{productId:'p5',qty:50,unitCost:200}],
+      subtotal:40000,total:40000,status:'received',notes:''}],
+    expenses:[{id:'exp1',date:dAgo(15),category:'Servicios',description:'Pago agua y luz',amount:45000,paymentMethod:'Transferencia',notes:''}],
+    currentShift:null,currentUser:null,
+    ui:{route:'acceso',cartItems:[],cartChannel:'Al paso',cartCustomerId:'c1',searchQ:'',catFilter:'Todas',
+        saleSearch:'',saleMethod:'Todas',saleDateFrom:'',saleDateTo:'',
+        invFilter:'Todos',reportFrom:'',reportTo:'',entryPin:'',selectedUserId:'u1'}
+  };
+}
+
+state=loadState();
+if(!state||!state.version){state=createSeed();saveState();}
+if(!state.ui)state.ui={route:'acceso',cartItems:[],cartChannel:'Al paso',cartCustomerId:'c1',searchQ:'',catFilter:'Todas',saleSearch:'',saleMethod:'Todas',saleDateFrom:'',saleDateTo:'',invFilter:'Todos',reportFrom:'',reportTo:'',entryPin:'',selectedUserId:'u1'};
+
+/* HELPERS */
+const fmt=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
+const fmtD=s=>{if(!s)return'';try{return new Date(s).toLocaleDateString('es-CL');}catch(e){return s;}};
+const fmtDT=s=>{if(!s)return'';try{return new Date(s).toLocaleString('es-CL');}catch(e){return s;}};
+const getP=id=>state.products.find(p=>p.id===id)||{name:'?',price:0};
+const getC=id=>state.customers.find(c=>c.id===id)||{name:'-'};
+const getSup=id=>state.suppliers.find(s=>s.id===id)||{name:'-'};
+const uid=()=>'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const catEmoji={Bebidas:'☕',Comidas:'🥪',Postres:'🍰',Otros:'📦'};
+
+function toast(msg,type='ok'){
+  const t=document.createElement('div');
+  t.className='toast toast-'+(type==='success'?'ok':type==='error'||type==='err'?'err':type==='warning'||type==='warn'?'warn':'ok');
+  t.textContent=msg;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+function openM(id){const el=document.getElementById(id);if(el)el.classList.add('open');}
+function closeM(id){const el=document.getElementById(id);if(el)el.classList.remove('open');}
+
+function navigate(route){
+  if(!state.currentUser){route='acceso';}
+  else if(state.currentUser.role==='Cajero'&&!['inicio','venta','ventas','caja','clientes'].includes(route)){
+    toast('Acceso restringido','error');return;
+  }
+  state.ui.route=route;saveState();render();
+}
+function logout(){state.currentUser=null;state.ui.route='acceso';state.ui.entryPin='';saveState();render();}
+
+function quote(items){
+  let sub=0,disc=0;
+  const lines=items.map(item=>{
+    const p=getP(item.productId);
+    const lt=(p.price||0)*item.qty;sub+=lt;
+    const promo=state.promotions.find(pr=>pr.active&&pr.productId===item.productId);
+    let d=0;if(promo){d=promo.type==='percent'?Math.round(lt*promo.value/100):promo.value*item.qty;}
+    disc+=d;
+    return{...item,name:p.name,price:p.price,discount:d,subtotal:lt-d};
+  });
+  return{lines,subtotal:sub,discount:disc,total:sub-disc};
+}
+
+/* NAV */
+const NAV=[
+  {r:'inicio',icon:'🏠',label:'Inicio'},
+  {r:'venta',icon:'🛒',label:'Punto de Venta'},
+  {r:'ventas',icon:'📋',label:'Historial'},
+  {r:'caja',icon:'💰',label:'Caja'},
+  {r:'clientes',icon:'👥',label:'Clientes'},
+  {r:'productos',icon:'📦',label:'Productos',admin:true},
+  {r:'inventario',icon:'🗂️',label:'Inventario',admin:true},
+  {r:'compras',icon:'🧾',label:'Compras',admin:true},
+  {r:'gastos',icon:'💸',label:'Gastos',admin:true},
+  {r:'recetas',icon:'🧪',label:'Recetas',admin:true},
+  {r:'promociones',icon:'🎯',label:'Promociones',admin:true},
+  {r:'proveedores',icon:'🏭',label:'Proveedores',admin:true},
+  {r:'reportes',icon:'📊',label:'Reportes',admin:true},
+  {r:'usuarios',icon:'👤',label:'Usuarios',admin:true},
+  {r:'configuracion',icon:'⚙️',label:'Configuración',admin:true},
+];
+
+const CAJERO_NAV=[
+  {r:'inicio',icon:'🏠',label:'Inicio'},
+  {r:'venta',icon:'🛒',label:'Venta'},
+  {r:'ventas',icon:'📋',label:'Historial'},
+  {r:'caja',icon:'💰',label:'Caja'},
+  {r:'clientes',icon:'👥',label:'Clientes'},
+];
+
+function shell(content,title){
+  const isAdmin=state.currentUser&&state.currentUser.role==='Administrador';
+  const isCajero=state.currentUser&&state.currentUser.role==='Cajero';
+  const items=NAV.filter(n=>!n.admin||isAdmin);
+  if(isCajero){
+    const bnav=CAJERO_NAV.map(n=>`<button class="bnav-item${state.ui.route===n.r?' active':''}" onclick="navigate('${n.r}')">
+      <span class="bnav-icon">${n.icon}</span><span class="bnav-label">${n.label}</span>
+    </button>`).join('');
+    return`<div class="main">
+      <div class="topbar">
+        <div class="topbar-title">${title}</div>
+        <div style="font-size:14px;color:var(--muted);display:flex;align-items:center;gap:8px">
+          <span style="width:32px;height:32px;border-radius:50%;background:var(--pr);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700">${state.currentUser.name[0]}</span>
+          ${state.currentUser.name}
+          <button class="btn btn-ghost btn-sm" onclick="logout()" style="margin-left:4px">Salir</button>
+        </div>
+      </div>
+      <div class="content">${content}</div>
+      <nav class="bottom-nav">${bnav}</nav>
+    </div>`;
+  }
+  return`<div class="sidebar">
+    <div class="sidebar-logo">☕ ${state.settings.businessName}</div>
+    <nav class="sidebar-nav">${items.map(n=>`<div class="nav-item${state.ui.route===n.r?' active':''}" onclick="navigate('${n.r}')">${n.icon} ${n.label}</div>`).join('')}</nav>
+    <div class="sidebar-footer"><button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="logout()">🚪 Cerrar sesión</button></div>
+  </div>
+  <div class="main">
+    <div class="topbar"><div class="topbar-title">${title}</div><div style="font-size:13px;color:var(--muted)">👤 ${state.currentUser?state.currentUser.name:''}</div></div>
+    <div class="content">${content}</div>
+  </div>`;
+}
+
+/* LOGIN */
+function renderLogin(){
+  const sel=state.ui.selectedUserId||'u1';
+  const pin=state.ui.entryPin||'';
+  const stars=pin.split('').map(()=>'●').join('')+'○'.repeat(4-pin.length);
+  return`<div class="login-screen"><div class="login-card">
+    <div style="font-size:48px">☕</div>
+    <h2 style="font-size:22px;font-weight:700;margin:8px 0 4px">${state.settings.businessName}</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Selecciona usuario e ingresa tu PIN</p>
+    <div class="user-list">${state.users.filter(u=>u.active).map(u=>`
+      <button class="user-btn${u.id===sel?' active':''}" onclick="selectUser('${u.id}')">
+        <div class="user-avatar">${u.name[0]}</div>
+        <div style="text-align:left"><div style="font-weight:600">${u.name}</div><div style="font-size:11px;color:var(--muted)">${u.role}</div></div>
+      </button>`).join('')}</div>
+    <div class="pin-display">${stars}</div>
+    <div class="pin-pad">${[1,2,3,4,5,6,7,8,9,'⌫',0,'↵'].map(k=>`<button class="pin-key" onclick="pinKey('${k}')">${k}</button>`).join('')}</div>
+  </div></div>`;
+}
+function selectUser(id){state.ui.selectedUserId=id;state.ui.entryPin='';saveState();render();}
+function pinKey(k){
+  let pin=state.ui.entryPin||'';
+  if(k==='⌫'){pin=pin.slice(0,-1);state.ui.entryPin=pin;render();}
+  else if(k==='↵'){doLogin();}
+  else if(pin.length<4){pin+=k;state.ui.entryPin=pin;if(pin.length===4){doLogin();}else{render();}}
+}
+function doLogin(){
+  const u=state.users.find(x=>x.id===state.ui.selectedUserId&&x.active);
+  if(u&&state.ui.entryPin===u.pin){
+    state.currentUser=u;state.ui.entryPin='';state.ui.route='inicio';
+    toast('Bienvenido, '+u.name,'success');saveState();render();
+  } else {
+    toast('PIN incorrecto','error');state.ui.entryPin='';render();
+  }
+}
+
+/* DASHBOARD */
+function renderDashboard(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const todaySales=state.sales.filter(s=>!s.void&&new Date(s.date)>=today);
+  const todayRev=todaySales.reduce((s,x)=>s+x.total,0);
+  const ticket=todaySales.length?Math.round(todayRev/todaySales.length):0;
+  const activeProd=state.products.filter(p=>p.active).length;
+
+  // Last 14 days chart data
+  const labels=[],data=[];
+  for(let i=13;i>=0;i--){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const next=new Date(d);next.setDate(d.getDate()+1);
+    const rev=state.sales.filter(s=>!s.void&&new Date(s.date)>=d&&new Date(s.date)<next).reduce((s,x)=>s+x.total,0);
+    labels.push(d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'}));
+    data.push(rev);
+  }
+
+  // Category breakdown last 30 days
+  const d30=new Date(today);d30.setDate(d30.getDate()-30);
+  const catTotals={};
+  state.sales.filter(s=>!s.void&&new Date(s.date)>=d30).forEach(sale=>{
+    sale.items.forEach(item=>{
+      const p=getP(item.productId);
+      catTotals[p.category||'Otros']=(catTotals[p.category||'Otros']||0)+item.subtotal;
+    });
+  });
+
+  // Recent sales
+  const recent=[...state.sales].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
+
+  setTimeout(()=>{
+    // Bar chart
+    const bc=document.getElementById('chart-bar');
+    if(bc){
+      if(_charts.bar){_charts.bar.destroy();}
+      _charts.bar=new Chart(bc,{type:'bar',data:{labels,datasets:[{label:'Ventas ($)',data,backgroundColor:'#f87839',borderRadius:6}]},options:{plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+    }
+    // Pie chart
+    const pc=document.getElementById('chart-pie');
+    if(pc){
+      if(_charts.pie){_charts.pie.destroy();}
+      const catLabels=Object.keys(catTotals);
+      _charts.pie=new Chart(pc,{type:'doughnut',data:{labels:catLabels,datasets:[{data:catLabels.map(k=>catTotals[k]),backgroundColor:['#f87839','#3b82f6','#10b981','#f59e0b','#8b5cf6']}]},options:{plugins:{legend:{position:'bottom'}}}});
+    }
+  },100);
+
+  return`<div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Ventas hoy</div><div class="kpi-value">${todaySales.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Monto hoy</div><div class="kpi-value" style="color:var(--pr)">${fmt(todayRev)}</div></div>
+    <div class="kpi"><div class="kpi-label">Ticket promedio</div><div class="kpi-value">${fmt(ticket)}</div></div>
+    <div class="kpi"><div class="kpi-label">Productos activos</div><div class="kpi-value">${activeProd}</div></div>
+  </div>
+  <div class="chart-row">
+    <div class="card"><h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Ventas últimas 2 semanas</h3><canvas id="chart-bar" height="80"></canvas></div>
+    <div class="card"><h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Por categoría (30 días)</h3><canvas id="chart-pie"></canvas></div>
+  </div>
+  <div class="card">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Últimas ventas</h3>
+    <table><thead><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Método</th></tr></thead>
+    <tbody>${recent.map(s=>`<tr><td>#${s.number}</td><td>${fmtDT(s.date)}</td><td>${getC(s.customerId).name}</td><td>${fmt(s.total)}</td><td>${s.payment.method}</td></tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+/* POS */
+function renderPOS(){
+  const q=state.ui.cartItems.length?quote(state.ui.cartItems):{lines:[],subtotal:0,discount:0,total:0};
+  const cats=['Todas',...new Set(state.products.map(p=>p.category))];
+  const filtered=state.products.filter(p=>p.active&&
+    (state.ui.catFilter==='Todas'||p.category===state.ui.catFilter)&&
+    (!state.ui.searchQ||p.name.toLowerCase().includes(state.ui.searchQ.toLowerCase())));
+
+  return`<div class="pos-layout">
+    <div class="pos-left">
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <input placeholder="Buscar producto..." value="${state.ui.searchQ||''}" oninput="state.ui.searchQ=this.value;saveState();renderPOSOnly()" style="flex:1">
+      </div>
+      <div class="chip-row">${cats.map(c=>`<span class="chip${state.ui.catFilter===c?' active':''}" onclick="state.ui.catFilter='${c}';saveState();renderPOSOnly()">${catEmoji[c]||''} ${c}</span>`).join('')}</div>
+      <div class="product-grid">${filtered.map(p=>`
+        <div class="product-card" onclick="addToCart('${p.id}')">
+          <div class="pc-emoji">${catEmoji[p.category]||'📦'}</div>
+          <div class="pc-name">${p.name}</div>
+          <div class="pc-price">${fmt(p.price)}</div>
+          ${p.stock!==999?`<div class="pc-stock">Stock: ${p.stock}</div>`:''}
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="cart-panel">
+      <div class="cart-header">
+        <div class="segmented">
+          <button class="seg-btn${state.ui.cartChannel==='Al paso'?' active':''}" onclick="state.ui.cartChannel='Al paso';saveState();renderPOSOnly()">Al paso</button>
+          <button class="seg-btn${state.ui.cartChannel==='Delivery'?' active':''}" onclick="state.ui.cartChannel='Delivery';saveState();renderPOSOnly()">Delivery</button>
+        </div>
+        <div class="field" style="margin:0"><select onchange="state.ui.cartCustomerId=this.value;saveState()">
+          ${state.customers.filter(c=>c.active).map(c=>`<option value="${c.id}"${state.ui.cartCustomerId===c.id?' selected':''}>${c.name}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="cart-items">
+        ${q.lines.length===0?`<div class="empty" style="padding:60px 20px"><div style="font-size:48px;margin-bottom:12px">🛒</div><div style="font-size:16px;font-weight:600;margin-bottom:4px">Carrito vacío</div><div style="font-size:14px">Toca un producto para agregar</div></div>`:
+          q.lines.map((item,i)=>`<div class="cart-item">
+            <div class="ci-name">${item.name}${item.discount?`<div style="font-size:11px;color:var(--ok)">-${fmt(item.discount)}</div>`:''}
+            </div>
+            <div class="qty-ctrl">
+              <button class="qty-btn" onclick="changeQty('${item.productId}',-1)">−</button>
+              <span class="qty-num">${item.qty}</span>
+              <button class="qty-btn" onclick="changeQty('${item.productId}',1)">+</button>
+            </div>
+            <div class="ci-sub">${fmt(item.subtotal)}</div>
+            <button class="cart-remove" onclick="removeFromCart('${item.productId}')">✕</button>
+          </div>`).join('')}
+      </div>
+      <div class="cart-totals">
+        <div class="total-row"><span>Subtotal</span><span>${fmt(q.subtotal)}</span></div>
+        ${q.discount?`<div class="total-row" style="color:var(--ok)"><span>Descuento</span><span>-${fmt(q.discount)}</span></div>`:''}
+        <div class="total-row main"><span>Total</span><span>${fmt(q.total)}</span></div>
+        <button class="cobrar-btn" ${q.total===0?'disabled':''} onclick="openCheckout()">💳 Cobrar ${fmt(q.total)}</button>
+        ${q.lines.length?`<button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center;font-size:14px" onclick="clearCart()">🗑 Vaciar carrito</button>`:''}
+      </div>
+    </div>
+  </div>
+  <!-- Checkout Modal -->
+  <div id="modal-checkout" class="modal-overlay" onclick="if(event.target===this)closeM('modal-checkout')">
+    <div class="modal">
+      <div class="modal-title">Cobrar venta <button class="modal-close" onclick="closeM('modal-checkout')">✕</button></div>
+      <div id="checkout-body"></div>
+    </div>
+  </div>`;
+}
+function renderPOSOnly(){
+  const app=document.getElementById('app');if(!app)return;
+  const isCajero=state.currentUser&&state.currentUser.role==='Cajero';
+  app.className=isCajero?'cashier-mode':'';
+  app.innerHTML=shell(renderPOS(),'Punto de Venta');
+}
+function addToCart(pid){
+  const p=getP(pid);if(!p.active)return;
+  const existing=state.ui.cartItems.find(i=>i.productId===pid);
+  if(existing){existing.qty++;}else{state.ui.cartItems.push({productId:pid,qty:1});}
+  saveState();renderPOSOnly();
+}
+function changeQty(pid,delta){
+  const item=state.ui.cartItems.find(i=>i.productId===pid);
+  if(!item)return;
+  item.qty=Math.max(0,item.qty+delta);
+  if(item.qty===0)state.ui.cartItems=state.ui.cartItems.filter(i=>i.productId!==pid);
+  saveState();renderPOSOnly();
+}
+function removeFromCart(pid){state.ui.cartItems=state.ui.cartItems.filter(i=>i.productId!==pid);saveState();renderPOSOnly();}
+function clearCart(){state.ui.cartItems=[];saveState();renderPOSOnly();}
+let _checkoutMethod='Efectivo';
+let _numpadValue='';
+
+function openCheckout(){
+  _checkoutMethod='Efectivo';_numpadValue='';
+  const q=quote(state.ui.cartItems);
+  document.getElementById('checkout-body').innerHTML=buildCheckoutBody(q);
+  openM('modal-checkout');
+}
+
+function buildCheckoutBody(q){
+  const methodIcons={Efectivo:'💵',Transferencia:'📱',Tarjeta:'💳',Junaeb:'🎓'};
+  const isEfectivo=_checkoutMethod==='Efectivo';
+  const receivedAmt=_numpadValue?parseInt(_numpadValue):null;
+  const change=receivedAmt!=null?(receivedAmt-q.total):null;
+  return`
+    <div style="background:#f9fafb;border-radius:12px;padding:14px;margin-bottom:16px">
+      ${q.lines.map(l=>`<div class="total-row"><span>${l.name} ×${l.qty}</span><span>${fmt(l.subtotal)}</span></div>`).join('')}
+      ${q.discount?`<div class="total-row" style="color:var(--ok)"><span>Descuento</span><span>-${fmt(q.discount)}</span></div>`:''}
+      <div class="total-row main"><span>TOTAL</span><span style="color:var(--pr)">${fmt(q.total)}</span></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px">MÉTODO DE PAGO</div>
+    <div class="pay-method-grid">
+      ${METHODS.map(m=>`<button class="pay-method-btn${_checkoutMethod===m?' selected':''}" onclick="selectPayMethod('${m}',${q.total})">${methodIcons[m]||''} ${m}</button>`).join('')}
+    </div>
+    ${isEfectivo?`
+    <div class="numpad-wrap">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">MONTO RECIBIDO</div>
+      <div class="numpad-amount">${_numpadValue?'$'+parseInt(_numpadValue).toLocaleString('es-CL'):'$0'}</div>
+      <div class="numpad-grid">
+        ${[7,8,9,4,5,6,1,2,3,'×',0,'⌫'].map(k=>`<button class="nk${k==='×'||k==='⌫'?' nk-special':''}" onclick="numpadCheckout('${k}',${q.total})">${k}</button>`).join('')}
+      </div>
+    </div>
+    ${change!=null?`<div class="change-display ${change>=0?'change-ok':'change-low'}">${change>=0?'Cambio: '+fmt(change):'⚠ Monto insuficiente: falta '+fmt(q.total-receivedAmt)}</div>`:''}
+    `:'<div style="background:#d1fae5;border-radius:10px;padding:12px;text-align:center;color:#065f46;font-weight:600;margin-bottom:14px">✓ Pago sin vuelto</div>'}
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeM('modal-checkout')">Cancelar</button>
+      <button class="btn btn-primary" style="flex:2;justify-content:center;font-size:16px;padding:14px" onclick="confirmSale(${q.total})" ${isEfectivo&&(change==null||change<0)?'disabled':''}>✅ Confirmar ${fmt(q.total)}</button>
+    </div>`;
+}
+
+function selectPayMethod(m,total){
+  _checkoutMethod=m;_numpadValue='';
+  const q=quote(state.ui.cartItems);
+  document.getElementById('checkout-body').innerHTML=buildCheckoutBody(q);
+}
+
+function numpadCheckout(k,total){
+  if(k==='×'){_numpadValue='';}
+  else if(k==='⌫'){_numpadValue=_numpadValue.slice(0,-1);}
+  else if(_numpadValue.length<9){_numpadValue+=String(k);}
+  const q=quote(state.ui.cartItems);
+  document.getElementById('checkout-body').innerHTML=buildCheckoutBody(q);
+}
+
+function updateChange(){}
+function confirmSale(total){
+  const method=_checkoutMethod||'Efectivo';
+  const amt=method==='Efectivo'?(_numpadValue?parseInt(_numpadValue):total):total;
+  if(method==='Efectivo'&&amt<total){toast('Monto insuficiente','error');return;}
+  const q=quote(state.ui.cartItems);
+  const sale={
+    id:uid(),number:Math.max(...state.sales.map(s=>s.number),1000)+1,
+    date:new Date().toISOString(),items:q.lines,
+    subtotal:q.subtotal,discount:q.discount,total:q.total,
+    payment:{method,amount:amt,change:amt-total},
+    customerId:state.ui.cartCustomerId||'c1',
+    channel:state.ui.cartChannel,userId:state.currentUser.id,
+    status:'completed',shiftId:state.currentShift?state.currentShift.id:null,
+    void:false,voidReason:null
+  };
+  q.lines.forEach(line=>{const p=getP(line.productId);if(p&&p.stock!==999)p.stock=Math.max(0,p.stock-line.qty);});
+  state.sales.push(sale);
+  state.ui.cartItems=[];
+  closeM('modal-checkout');
+  toast('Venta #'+sale.number+' registrada','success');
+  saveState();renderPOSOnly();
+}
+
+/* SALES HISTORY */
+function renderVentas(){
+  let sales=[...state.sales].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(state.ui.saleSearch)sales=sales.filter(s=>String(s.number).includes(state.ui.saleSearch)||getC(s.customerId).name.toLowerCase().includes(state.ui.saleSearch.toLowerCase()));
+  if(state.ui.saleMethod&&state.ui.saleMethod!=='Todas')sales=sales.filter(s=>s.payment.method===state.ui.saleMethod);
+  if(state.ui.saleDateFrom)sales=sales.filter(s=>new Date(s.date)>=new Date(state.ui.saleDateFrom));
+  if(state.ui.saleDateTo)sales=sales.filter(s=>new Date(s.date)<=new Date(state.ui.saleDateTo+'T23:59:59'));
+  const totalRev=sales.filter(s=>!s.void).reduce((t,s)=>t+s.total,0);
+  return`<div class="section-header"><div class="section-title">Historial de Ventas</div>
+    <button class="btn btn-primary" onclick="navigate('venta')">+ Nueva Venta</button></div>
+  <div class="filters-row">
+    <input placeholder="Buscar #, cliente..." value="${state.ui.saleSearch||''}" oninput="state.ui.saleSearch=this.value;saveState();render()" style="max-width:200px">
+    <select onchange="state.ui.saleMethod=this.value;saveState();render()" style="max-width:160px">
+      <option value="Todas"${state.ui.saleMethod==='Todas'?' selected':''}>Todos los métodos</option>
+      ${METHODS.map(m=>`<option${state.ui.saleMethod===m?' selected':''}>${m}</option>`).join('')}
+    </select>
+    <input type="date" value="${state.ui.saleDateFrom||''}" onchange="state.ui.saleDateFrom=this.value;saveState();render()" style="max-width:150px">
+    <input type="date" value="${state.ui.saleDateTo||''}" onchange="state.ui.saleDateTo=this.value;saveState();render()" style="max-width:150px">
+    <button class="btn btn-ghost btn-sm" onclick="state.ui.saleSearch='';state.ui.saleMethod='Todas';state.ui.saleDateFrom='';state.ui.saleDateTo='';saveState();render()">Limpiar</button>
+  </div>
+  <div class="card">
+    <table><thead><tr><th>#</th><th>Fecha</th><th>Cliente</th><th>Items</th><th>Total</th><th>Método</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${sales.slice(0,100).map(s=>`<tr>
+      <td>#${s.number}</td><td>${fmtDT(s.date)}</td><td>${getC(s.customerId).name}</td>
+      <td>${s.items.length} items</td><td>${fmt(s.total)}</td><td>${s.payment.method}</td>
+      <td><span class="badge ${s.void?'badge-err':'badge-ok'}">${s.void?'Anulada':'Completada'}</span></td>
+      <td><div class="row-actions">${!s.void?`<button class="btn btn-danger btn-sm" onclick="voidSalePrompt('${s.id}')">Anular</button>`:''}</div></td>
+    </tr>`).join('')}</tbody></table>
+    <div style="padding:12px;font-size:13px;color:var(--muted);border-top:1px solid var(--border)">
+      Mostrando ${Math.min(sales.length,100)} de ${sales.length} ventas • Total: ${fmt(totalRev)}
+    </div>
+  </div>`;
+}
+function voidSalePrompt(id){
+  const reason=prompt('Razón de anulación:');
+  if(reason===null)return;
+  const sale=state.sales.find(s=>s.id===id);
+  if(!sale||sale.void)return;
+  sale.void=true;sale.voidReason=reason;sale.status='void';
+  sale.items.forEach(line=>{const p=getP(line.productId);if(p&&p.stock!==999)p.stock+=line.qty;});
+  toast('Venta #'+sale.number+' anulada','warning');saveState();render();
+}
+
+/* CAJA */
+function renderCaja(){
+  const shift=state.currentShift;
+  const cashMov=shift?state.movements.filter(m=>m.shiftId===shift.id):[];
+  const cashSales=shift?state.sales.filter(s=>!s.void&&s.shiftId===shift.id&&s.payment.method==='Efectivo').reduce((t,s)=>t+s.payment.amount-s.payment.change,0):0;
+  const ingresos=cashMov.filter(m=>m.type==='Ingreso').reduce((t,m)=>t+m.amount,0);
+  const egresos=cashMov.filter(m=>m.type==='Egreso').reduce((t,m)=>t+m.amount,0);
+  const expected=shift?(shift.openingCash+cashSales+ingresos-egresos):0;
+  return`<div class="section-title" style="margin-bottom:20px">Caja y Turnos</div>
+  ${!shift?`
+    <div class="card" style="max-width:420px">
+      <div style="text-align:center;padding:20px">
+        <div style="font-size:48px;margin-bottom:12px">💰</div>
+        <h3>No hay turno abierto</h3>
+        <p style="color:var(--muted);margin:8px 0 20px">Abre un turno para comenzar a vender</p>
+        <button class="btn btn-primary" onclick="openShift()">Abrir turno</button>
+      </div>
+    </div>`:`
+    <div class="kpi-grid" style="max-width:800px">
+      <div class="kpi"><div class="kpi-label">Apertura</div><div class="kpi-value">${fmt(shift.openingCash)}</div><div class="kpi-sub">${fmtDT(shift.openedAt)}</div></div>
+      <div class="kpi"><div class="kpi-label">Ventas efectivo</div><div class="kpi-value" style="color:var(--ok)">${fmt(cashSales)}</div></div>
+      <div class="kpi"><div class="kpi-label">Movimientos</div><div class="kpi-value">${fmt(ingresos-egresos)}</div></div>
+      <div class="kpi"><div class="kpi-label">Efectivo esperado</div><div class="kpi-value" style="color:var(--pr)">${fmt(expected)}</div></div>
+    </div>
+    <div style="display:flex;gap:16px;max-width:800px">
+      <div class="card" style="flex:1">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Registrar movimiento</h3>
+        <div class="field"><label>Tipo</label><select id="mov-type"><option>Ingreso</option><option>Egreso</option></select></div>
+        <div class="field"><label>Monto</label><input type="number" id="mov-amount" placeholder="$0"></div>
+        <div class="field"><label>Descripción</label><input id="mov-desc" placeholder="Descripción..."></div>
+        <button class="btn btn-primary" onclick="addMovement()">Registrar</button>
+      </div>
+      <div class="card" style="flex:1">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Movimientos del turno</h3>
+        ${cashMov.length===0?`<div class="empty">Sin movimientos</div>`:
+          `<table><thead><tr><th>Tipo</th><th>Monto</th><th>Descripción</th></tr></thead>
+          <tbody>${cashMov.map(m=>`<tr><td><span class="badge ${m.type==='Ingreso'?'badge-ok':'badge-err'}">${m.type}</span></td><td>${fmt(m.amount)}</td><td>${m.description}</td></tr>`).join('')}</tbody>
+          </table>`}
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <button class="btn btn-danger" onclick="closeShift()">Cerrar turno</button>
+    </div>`}
+  <div class="card" style="margin-top:24px">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Historial de turnos</h3>
+    ${state.shifts.length===0?`<div class="empty">Sin turnos registrados</div>`:
+      `<table><thead><tr><th>Apertura</th><th>Cierre</th><th>Apertura $</th><th>Cierre $</th><th>Estado</th></tr></thead>
+      <tbody>${[...state.shifts].reverse().slice(0,20).map(s=>`<tr>
+        <td>${fmtDT(s.openedAt)}</td><td>${s.closedAt?fmtDT(s.closedAt):'-'}</td>
+        <td>${fmt(s.openingCash)}</td><td>${s.closingCash!=null?fmt(s.closingCash):'-'}</td>
+        <td><span class="badge ${s.closedAt?'badge-gray':'badge-ok'}">${s.closedAt?'Cerrado':'Abierto'}</span></td>
+      </tr>`).join('')}</tbody></table>`}
+  </div>`;
+}
+function openShift(){
+  const cash=parseFloat(prompt('Efectivo de apertura:')||'0');
+  if(isNaN(cash))return;
+  const shift={id:uid(),openedAt:new Date().toISOString(),openingCash:cash,closedAt:null,closingCash:null,userId:state.currentUser.id};
+  state.shifts.push(shift);state.currentShift=shift;
+  toast('Turno abierto','success');saveState();render();
+}
+function addMovement(){
+  const type=document.getElementById('mov-type').value;
+  const amount=parseFloat(document.getElementById('mov-amount').value)||0;
+  const description=document.getElementById('mov-desc').value;
+  if(!amount){toast('Ingresa un monto','error');return;}
+  const mov={id:uid(),shiftId:state.currentShift.id,type,amount,description,date:new Date().toISOString()};
+  state.movements.push(mov);toast('Movimiento registrado','success');saveState();render();
+}
+function closeShift(){
+  const cashSales=state.sales.filter(s=>!s.void&&s.shiftId===state.currentShift.id&&s.payment.method==='Efectivo').reduce((t,s)=>t+s.payment.amount-s.payment.change,0);
+  const ingresos=state.movements.filter(m=>m.shiftId===state.currentShift.id&&m.type==='Ingreso').reduce((t,m)=>t+m.amount,0);
+  const egresos=state.movements.filter(m=>m.shiftId===state.currentShift.id&&m.type==='Egreso').reduce((t,m)=>t+m.amount,0);
+  const expected=state.currentShift.openingCash+cashSales+ingresos-egresos;
+  const closing=parseFloat(prompt(`Efectivo en caja (esperado: ${fmt(expected)}):`)||expected);
+  state.currentShift.closedAt=new Date().toISOString();
+  state.currentShift.closingCash=closing;
+  state.currentShift=null;
+  toast('Turno cerrado','success');saveState();render();
+}
+
+/* PRODUCTS */
+function renderProductos(){
+  return`<div class="section-header"><div class="section-title">Productos</div>
+    <button class="btn btn-primary" onclick="openProductModal()">+ Nuevo Producto</button></div>
+  <div class="card">
+    <table><thead><tr><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Costo</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${state.products.map(p=>`<tr>
+      <td>${p.sku}</td><td>${p.name}</td><td>${p.category}</td>
+      <td>${fmt(p.price)}</td><td>${fmt(p.cost)}</td>
+      <td>${p.stock===999?'∞':p.stock}</td>
+      <td><span class="badge ${p.active?'badge-ok':'badge-gray'}">${p.active?'Activo':'Inactivo'}</span></td>
+      <td><div class="row-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openProductModal('${p.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Eliminar</button>
+      </div></td>
+    </tr>`).join('')}</tbody></table>
+  </div>
+  <div id="modal-product" class="modal-overlay" onclick="if(event.target===this)closeM('modal-product')">
+    <div class="modal"><div id="modal-product-body"></div></div>
+  </div>`;
+}
+function openProductModal(id){
+  const p=id?state.products.find(x=>x.id===id):{id:'',name:'',sku:'',category:'Bebidas',price:'',cost:'',stock:'',minStock:'',unit:'unidad',active:true};
+  document.getElementById('modal-product-body').innerHTML=`
+    <div class="modal-title">${id?'Editar':'Nuevo'} Producto <button class="modal-close" onclick="closeM('modal-product')">✕</button></div>
+    <div class="grid2">
+      <div class="field"><label>Nombre</label><input id="fp-name" value="${p.name}"></div>
+      <div class="field"><label>SKU</label><input id="fp-sku" value="${p.sku}"></div>
+      <div class="field"><label>Categoría</label><select id="fp-cat">${state.categories.map(c=>`<option${p.category===c?' selected':''}>${c}</option>`).join('')}</select></div>
+      <div class="field"><label>Unidad</label><input id="fp-unit" value="${p.unit}"></div>
+      <div class="field"><label>Precio venta</label><input type="number" id="fp-price" value="${p.price}"></div>
+      <div class="field"><label>Costo</label><input type="number" id="fp-cost" value="${p.cost}"></div>
+      <div class="field"><label>Stock (999=ilimitado)</label><input type="number" id="fp-stock" value="${p.stock}"></div>
+      <div class="field"><label>Stock mínimo</label><input type="number" id="fp-min" value="${p.minStock}"></div>
+    </div>
+    <div class="field"><label><input type="checkbox" id="fp-active" ${p.active?'checked':''}> Activo</label></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeM('modal-product')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProduct('${id||''}')">Guardar</button>
+    </div>`;
+  openM('modal-product');
+}
+function saveProduct(id){
+  const data={
+    name:document.getElementById('fp-name').value.trim(),sku:document.getElementById('fp-sku').value.trim(),
+    category:document.getElementById('fp-cat').value,unit:document.getElementById('fp-unit').value,
+    price:parseFloat(document.getElementById('fp-price').value)||0,
+    cost:parseFloat(document.getElementById('fp-cost').value)||0,
+    stock:parseInt(document.getElementById('fp-stock').value)||0,
+    minStock:parseInt(document.getElementById('fp-min').value)||0,
+    active:document.getElementById('fp-active').checked
+  };
+  if(!data.name){toast('Nombre requerido','error');return;}
+  if(id){Object.assign(state.products.find(p=>p.id===id),data);}
+  else{state.products.push({id:uid(),...data});}
+  closeM('modal-product');toast('Producto guardado','success');saveState();render();
+}
+function deleteProduct(id){
+  if(!confirm('¿Eliminar producto?'))return;
+  state.products=state.products.filter(p=>p.id!==id);
+  toast('Producto eliminado','warning');saveState();render();
+}
+
+/* INVENTORY */
+function renderInventario(){
+  const low=state.products.filter(p=>p.active&&p.stock!==999&&p.stock<=p.minStock);
+  let prods=state.products.filter(p=>p.active);
+  if(state.ui.invFilter==='Bajo stock')prods=prods.filter(p=>p.stock!==999&&p.stock<=p.minStock);
+  return`<div class="section-title" style="margin-bottom:16px">Inventario</div>
+  ${low.length?`<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px">
+    ⚠ <strong>${low.length} producto(s) con stock bajo:</strong> ${low.map(p=>p.name).join(', ')}
+  </div>`:''}
+  <div class="filters-row">
+    <span style="font-size:13px;color:var(--muted)">Filtro:</span>
+    ${['Todos','Bajo stock'].map(f=>`<span class="chip${state.ui.invFilter===f?' active':''}" onclick="state.ui.invFilter='${f}';saveState();render()">${f}</span>`).join('')}
+  </div>
+  <div class="card">
+    <table><thead><tr><th>Producto</th><th>SKU</th><th>Stock</th><th>Mínimo</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${prods.map(p=>{
+      const st=p.stock===999?'ok':p.stock<=0?'Crítico':p.stock<=p.minStock?'Bajo':'ok';
+      return`<tr>
+        <td>${p.name}</td><td>${p.sku}</td>
+        <td>${p.stock===999?'∞':p.stock}</td><td>${p.minStock}</td>
+        <td><span class="badge ${st==='ok'?'badge-ok':st==='Bajo'?'badge-warn':'badge-err'}">${st==='ok'?'OK':st}</span></td>
+        <td><button class="btn btn-secondary btn-sm" onclick="openAdjust('${p.id}')">Ajustar</button></td>
+      </tr>`;}).join('')}
+    </tbody></table>
+  </div>
+  <div id="modal-adjust" class="modal-overlay" onclick="if(event.target===this)closeM('modal-adjust')">
+    <div class="modal"><div id="modal-adjust-body"></div></div>
+  </div>`;
+}
+function openAdjust(pid){
+  const p=getP(pid);
+  document.getElementById('modal-adjust-body').innerHTML=`
+    <div class="modal-title">Ajustar Stock: ${p.name} <button class="modal-close" onclick="closeM('modal-adjust')">✕</button></div>
+    <div class="field"><label>Stock actual</label><input disabled value="${p.stock===999?'∞':p.stock}"></div>
+    <div class="field"><label>Tipo</label><select id="adj-type"><option>Entrada</option><option>Salida</option><option>Ajuste</option></select></div>
+    <div class="field"><label>Cantidad</label><input type="number" id="adj-qty" min="1" value="1"></div>
+    <div class="field"><label>Razón</label><input id="adj-reason" placeholder="Motivo del ajuste..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeM('modal-adjust')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveAdjust('${pid}')">Guardar</button>
+    </div>`;
+  openM('modal-adjust');
+}
+function saveAdjust(pid){
+  const type=document.getElementById('adj-type').value;
+  const qty=parseInt(document.getElementById('adj-qty').value)||0;
+  const reason=document.getElementById('adj-reason').value;
+  if(!qty){toast('Ingresa cantidad','error');return;}
+  const p=state.products.find(x=>x.id===pid);
+  if(p.stock!==999){
+    if(type==='Entrada')p.stock+=qty;
+    else if(type==='Salida')p.stock=Math.max(0,p.stock-qty);
+    else p.stock=qty;
+  }
+  state.stockMovements.push({id:uid(),productId:pid,type,qty,reason,date:new Date().toISOString()});
+  closeM('modal-adjust');toast('Stock actualizado','success');saveState();render();
+}
+
+/* CUSTOMERS */
+function renderClientes(){
+  return`<div class="section-header"><div class="section-title">Clientes</div>
+    <button class="btn btn-primary" onclick="openClientModal()">+ Nuevo Cliente</button></div>
+  <div class="card">
+    <table><thead><tr><th>Nombre</th><th>RUT</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${state.customers.map(c=>`<tr>
+      <td>${c.name}</td><td>${c.rut||'-'}</td><td>${c.email||'-'}</td><td>${c.phone||'-'}</td>
+      <td><span class="badge ${c.active?'badge-ok':'badge-gray'}">${c.active?'Activo':'Inactivo'}</span></td>
+      <td><div class="row-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openClientModal('${c.id}')">Editar</button>
+        ${c.id!=='c1'?`<button class="btn btn-danger btn-sm" onclick="deleteClient('${c.id}')">Eliminar</button>`:''}
+      </div></td>
+    </tr>`).join('')}</tbody></table>
+  </div>
+  <div id="modal-client" class="modal-overlay" onclick="if(event.target===this)closeM('modal-client')">
+    <div class="modal"><div id="modal-client-body"></div></div>
+  </div>`;
+}
+function openClientModal(id){
+  const c=id?state.customers.find(x=>x.id===id):{name:'',rut:'',email:'',phone:'',address:'',active:true};
+  document.getElementById('modal-client-body').innerHTML=`
+    <div class="modal-title">${id?'Editar':'Nuevo'} Cliente <button class="modal-close" onclick="closeM('modal-client')">✕</button></div>
+    <div class="field"><label>Nombre</label><input id="fc-name" value="${c.name}"></div>
+    <div class="grid2">
+      <div class="field"><label>RUT</label><input id="fc-rut" value="${c.rut||''}"></div>
+      <div class="field"><label>Teléfono</label><input id="fc-phone" value="${c.phone||''}"></div>
+    </div>
+    <div class="field"><label>Email</label><input id="fc-email" value="${c.email||''}"></div>
+    <div class="field"><label>Dirección</label><input id="fc-addr" value="${c.address||''}"></div>
+    <div class="field"><label><input type="checkbox" id="fc-active" ${c.active?'checked':''}> Activo</label></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeM('modal-client')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveClient('${id||''}')">Guardar</button>
+    </div>`;
+  openM('modal-client');
+}
+function saveClient(id){
+  const data={name:document.getElementById('fc-name').value.trim(),rut:document.getElementById('fc-rut').value,
+    phone:document.getElementById('fc-phone').value,email:document.getElementById('fc-email').value,
+    address:document.getElementById('fc-addr').value,active:document.getElementById('fc-active').checked};
+  if(!data.name){toast('Nombre requerido','error');return;}
+  if(id){Object.assign(state.customers.find(c=>c.id===id),data);}
+  else{state.customers.push({id:uid(),...data});}
+  closeM('modal-client');toast('Cliente guardado','success');saveState();render();
+}
+function deleteClient(id){
+  if(!confirm('¿Eliminar cliente?'))return;
+  state.customers=state.customers.filter(c=>c.id!==id);
+  toast('Cliente eliminado','warning');saveState();render();
+}
+
+/* SUPPLIERS */
+function renderProveedores(){
+  return`<div class="section-header"><div class="section-title">Proveedores</div>
+    <button class="btn btn-primary" onclick="openSupModal()">+ Nuevo Proveedor</button></div>
+  <div class="card">
+    <table><thead><tr><th>Nombre</th><th>Contacto</th><th>Email</th><th>Teléfono</th><th>RUT</th><th>Acciones</th></tr></thead>
+    <tbody>${state.suppliers.map(s=>`<tr>
+      <td>${s.name}</td><td>${s.contact}</td><td>${s.email}</td><td>${s.phone}</td><td>${s.rut}</td>
+      <td><div class="row-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openSupModal('${s.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSup('${s.id}')">Eliminar</button>
+      </div></td>
+    </tr>`).join('')}</tbody></table>
+  </div>
+  <div id="modal-sup" class="modal-overlay" onclick="if(event.target===this)closeM('modal-sup')">
+    <div class="modal"><div id="modal-sup-body"></div></div>
+  </div>`;
+}
+function openSupModal(id){
+  const s=id?state.suppliers.find(x=>x.id===id):{name:'',contact:'',email:'',phone:'',rut:'',active:true};
+  document.getElementById('modal-sup-body').innerHTML=`
+    <div class="modal-title">${id?'Editar':'Nuevo'} Proveedor <button class="modal-close" onclick="closeM('modal-sup')">✕</button></div>
+    <div class="field"><label>Nombre</label><input id="fs-name" value="${s.name}"></div>
+    <div class="grid2">
+      <div class="field"><label>Contacto</label><input id="fs-contact" value="${s.contact}"></div>
+      <div class="field"><label>RUT</label><input id="fs-rut" value="${s.rut}"></div>
+      <div class="field"><label>Email</label><input id="fs-email" value="${s.email}"></div>
+      <div class="field"><label>Teléfono</label><input id="fs-phone" value="${s.phone}"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeM('modal-sup')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSup('${id||''}')">Guardar</button>
+    </div>`;
+  openM('modal-sup');
+}
+function saveSup(id){
+  const data={name:document.getElementById('fs-name').value.trim(),contact:document.getElementById('fs-contact').value,
+    rut:document.getElementById('fs-rut').value,email:document.getElementById('fs-email').value,
+    phone:document.getElementById('fs-phone').value,active:true};
+  if(!data.name){toast('Nombre requerido','error');return;}
+  if(id){Object.assign(state.suppliers.find(s=>s.id===id),data);}
+  else{state.suppliers.push({id:uid(),...data});}
+  closeM('modal-sup');toast('Proveedor guardado','success');saveState();render();
+}
+function deleteSup(id){
+  if(!confirm('¿Eliminar proveedor?'))return;
+  state.suppliers=state.suppliers.filter(s=>s.id!==id);
+  toast('Proveedor eliminado','warning');saveState();render();
+}
+
+/* PURCHASES */
+function renderCompras(){
+  return`<div class="section-header"><div class="section-title">Compras</div>
+    <button class="btn btn-primary" onclick="openPurchaseModal()">+ Nueva Compra</button></div>
+  <div class="card">
+    <table><thead><tr><th>#</th><th>Fecha</th><th>Proveedor</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${[...state.purchases].reverse().map(p=>`<tr>
+      <td>${p.id}</td><td>${fmtD(p.date)}</td><td>${getSup(p.supplierId).name}</td>
+      <td>${fmt(p.total)}</td>
+      <td><span class="badge ${p.status==='received'?'badge-ok':'badge-warn'}">${p.status==='received'?'Recibida':'Pendiente'}</span></td>
+      <td><div class="row-actions">
+        ${p.status!=='received'?`<button class="btn btn-primary btn-sm" onclick="receivePurchase('${p.id}')">Recibir</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="deletePurchase('${p.id}')">Eliminar</button>
+      </div></td>
+    </tr>`).join('')}</tbody></table>
+  </div>
+  <div id="modal-purchase" class="modal-overlay" onclick="if(event.target===this)closeM('modal-purchase')">
+    <div class="modal modal-lg"><div id="modal-purchase-body"></div></div>
+  </div>`;
+}
+let _purchaseItems=[];
+function openPurchaseModal(){
+  _purchaseItems=[{productId:state.products[0].id,qty:1,unitCost:state.products[0].cost}];
+  renderPurchaseModal();openM('modal-purchase');
+}
+function renderPurchaseModal(){
+  const total=_purchaseItems.reduce((t,i)=>t+i.qty*i.unitCost,0);
+  document.getElementById('modal-purchase-body').innerHTML=`
+    <div class="modal-title">Nueva Compra <button class="modal-close" onclick="closeM('modal-purchase')">✕</button></div>
+    <div class="field"><label>Proveedor</label><select id="pur-sup">${state.suppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+    <div class="field"><label>Fecha</label><input type="date" id="pur-date" value="${new Date().toISOString().slice(0,10)}"></div>
+    <table style="margin-bottom:12px"><thead><tr><th>Producto</th><th>Cantidad</th><th>Costo unit.</th><th>Subtotal</th><th></th></tr></thead>
+    <tbody>${_purchaseItems.map((item,i)=>`<tr>
+      <td><select onchange="_purchaseItems[${i}].productId=this.value">${state.products.map(p=>`<option value="${p.id}"${item.productId===p.id?' selected':''}>${p.name}</option>`).join('')}</select></td>
+      <td><input type="number" value="${item.qty}" min="1" style="width:70px" onchange="_purchaseItems[${i}].qty=parseInt(this.value)||1"></td>
+      <td><input type="number" value="${item.unitCost}" min="0" style="width:90px" onchange="_purchaseItems[${i}].unitCost=parseFloat(this.value)||0"></td>
+      <td>${fmt(item.qty*item.unitCost)}</td>
+      <td><button onclick="_purchaseItems.splice(${i},1);renderPurchaseModal()" style="color:var(--err);background:none;border:none;cursor:pointer;font-size:16px">✕</button></td>
+    </tr>`).join('')}</tbody></table>
+    <button class="btn btn-secondary btn-sm" onclick="_purchaseItems.push({productId:state.products[0].id,qty:1,unitCost:state.products[0].cost});renderPurchaseModal()">+ Agregar ítem</button>
+    <div style="text-align:right;font-weight:700;margin:12px 0">Total: ${fmt(total)}</div>
+    <div class="field"><label>Notas</label><input id="pur-notes" placeholder="Notas opcionales..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeM('modal-purchase')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePurchase()">Guardar</button>
+    </div>`;
+}
+function savePurchase(){
+  const supplierId=document.getElementById('pur-sup').value;
+  const date=document.getElementById('pur-date').value;
+  const notes=document.getElementById('pur-notes').value;
+  if(!_purchaseItems.length){toast('Agrega al menos un ítem','error');return;}
+  const total=_purchaseItems.reduce((t,i)=>t+i.qty*i.unitCost,0);
+  state.purchases.push({id:uid(),supplierId,date:new Date(date).toISOString(),items:[..._purchaseItems],subtotal:total,total,status:'pending',notes});
+  closeM('modal-purchase');toast('Compra guardada','success');saveState();render();
+}
+function receivePurchase(id){
+  const p=state.purchases.find(x=>x.id===id);if(!p)return;
+  p.items.forEach(item=>{const prod=state.products.find(x=>x.id===item.productId);if(prod&&prod.stock!==999)prod.stock+=item.qty;});
+  p.status='received';toast('Compra recibida y stock actualizado','success');saveState();render();
+}
+function deletePurchase(id){
+  if(!confirm('¿Eliminar compra?'))return;
+  state.purchases=state.purchases.filter(p=>p.id!==id);toast('Compra eliminada','warning');saveState();render();
+}
+
+/* EXPENSES */
+function renderGastos(){
+  const total=state.expenses.reduce((t,e)=>t+e.amount,0);
+  return`<div class="section-header"><div class="section-title">Gastos</div>
+    <button class="btn btn-primary" onclick="openExpenseModal()">+ Nuevo Gasto</button></div>
+  <div class="kpi-grid" style="max-width:600px;margin-bottom:20px">
+    <div class="kpi"><div class="kpi-label">Total gastos</div><div class="kpi-value" style="color:var(--err)">${fmt(total)}</div></div>
+    <div class="kpi"><div class="kpi-label">Registros</div><div class="kpi-value">${state.expenses.length}</div></div>
+  </div>
+  <div class="card">
+    <table><thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Método</th><th>Acciones</th></tr></thead>
+    <tbody>${[...state.expenses].reverse().map(e=>`<tr>
+      <td>${fmtD(e.date)}</td><td>${e.category}</td><td>${e.description}</td>
+      <td>${fmt(e.amount)}</td><td>${e.paymentMethod}</td>
+      <td><div class="row-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openExpenseModal('${e.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteExpense('${e.id}')">Eliminar</button>
+      </div></td>
+    </tr>`).join('')}</tbody></table>
+  </div>
+  <div id="modal-expense" class="modal-overlay" onclick="if(event.target===this)closeM('modal-expense')">
+    <div class="modal"><div id="modal-expense-body"></div></div>
+  </div>`;
+}
+function openExpenseModal(id){
+  const e=id?state.expenses.find(x=>x.id===id):{date:new Date().toISOString().slice(0,10),category:'Servicios',description:'',amount:'',paymentMethod:'Efectivo',notes:''};
+  document.getElementById('modal-expense-body').innerHTML=`
+    <div class="modal-title">${id?'Editar':'Nuevo'} Gasto <button class="modal-close" onclick="closeM('modal-expense')">✕</button></div>
+    <div class="grid2">
+      <div class="field"><label>Fecha</label><input type="date" id="fe-date" value="${typeof e.date==='string'?e.date.slice(0,10):''}"></div>
+      <div class="field"><label>Categoría</label><select id="fe-cat">${EXP_CATS.map(c=>`<option${e.category===c?' selected':''}>${c}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>Descripción</label><input id="fe-desc" value="${e.description}"></div>
+    <div class="grid2">
+      <div class="field"><label>Monto</label><input type="number" id="fe-amount" value="${e.amount}"></div>
+      <div class="field"><label>Método pago</label><select id="fe-method">${METHODS.map(m=>`<option${e.paymentMethod===m?' selected':''}>${m}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>Notas</label><textarea id="fe-notes" rows="2">${e.notes||''}</textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeM('modal-expense')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveExpense('${id||''}')">Guardar</button>
+    </div>`;
+  openM('modal-expense');
+}
+function saveExpense(id){
+  const data={date:new Date(document.getElementById('fe-date').value).toISOString(),
+    category:document.getElementById('fe-cat').value,description:document.getElementById('fe-desc').value,
+    amount:parseFloat(document.getElementById('fe-amount').value)||0,
+    paymentMethod:document.getElementById('fe-method').value,notes:document.getElementById('fe-notes').value};
+  if(!data.amount){toast('Ingresa un monto','error');return;}
+  if(id){Object.assign(state.expenses.find(e=>e.id===id),data);}
+  else{state.expenses.push({id:uid(),...data});}
+  closeM('modal-expense');toast('Gasto guardado','success');saveState();render();
+}
+function deleteExpense(id){
+  if(!confirm('¿Eliminar gasto?'))return;
+  state.expenses=state.expenses.filter(e=>e.id!==id);toast('Gasto eliminado','warning');saveState();render();
+}
+
+/* RECIPES */
+function renderRecetas(){
+  return`<div class="section-header"><div class="section-title">Recetas</div>
+    <button class="btn btn-primary" onclick="openRecipeModal()">+ Nueva Receta</button></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+    ${state.recipes.map(r=>{
+      const p=getP(r.productId);
+      return`<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div><div style="font-weight:600;font-size:15px">${r.name}</div><div style="font-size:12px;color:var(--muted)">${p.name}</div></div>
+          <div class="row-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openRecipeModal('${r.id}')">Editar</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteRecipe('${r.id}')">Eliminar</button>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:13px">
+          <div style="font-weight:500;margin-bottom:6px">Ingredientes:</div>
+          ${r.ingredients.map(i=>`<div style="color:var(--muted)">• ${getP(i.productId).name} × ${i.qty} ${i.unit}</div>`).join('')}
+          ${r.notes?`<div style="margin-top:8px;font-size:12px;color:var(--muted);font-style:italic">${r.notes}</div>`:''}
+        </div>
+      </div>`;}).join('')}
+  </div>
+  <div id="modal-recipe" class="modal-overlay" onclick="if(event.target===this)closeM('modal-recipe')">
+    <div class="modal"><div id="modal-recipe-body"></div></div>
+  </div>`;
+}
+let _recipeIngredients=[];
+function openRecipeModal(id){
+  const r=id?state.recipes.find(x=>x.id===id):{name:'',productId:state.products[0].id,notes:''};
+  _recipeIngredients=id?[...r.ingredients]:[{productId:state.products[0].id,qty:1,unit:'unidad'}];
+  renderRecipeModal(id,r);openM('modal-recipe');
+}
+function renderRecipeModal(id,r){
+  document.getElementById('modal-recipe-body').innerHTML=`
+    <div class="modal-title">${id?'Editar':'Nueva'} Receta <button class="modal-close" onclick="closeM('modal-recipe')">✕</button></div>
+    <div class="field"><label>Nombre</label><input id="fr-name" value="${r.name}"></div>
+    <div class="field"><label>Producto final</label><select id="fr-prod">${state.products.map(p=>`<option value="${p.id}"${r.productId===p.id?' selected':''}>${p.name}</option>`).join('')}</select></div>
+    <div style="font-weight:500;font-size:13px;margin-bottom:8px">Ingredientes:</div>
+    ${_recipeIngredients.map((ing,i)=>`<div style="display:flex;gap:8px;margin-bottom:8px">
+      <select onchange="_recipeIngredients[${i}].productId=this.value" style="flex:2">${state.products.map(p=>`<option value="${p.id}"${ing.productId===p.id?' selected':''}>${p.name}</option>`).join('')}</select>
+      <input type="number" value="${ing.qty}" min="1" style="width:60px" onchange="_recipeIngredients[${i}].qty=parseFloat(this.value)||1">
+      <input value="${ing.unit}" style="width:70px" onchange="_recipeIngredients[${i}].unit=this.value">
+      <button onclick="_recipeIngredients.splice(${i},1);renderRecipeModal('${id||''}',{name:document.getElementById('fr-name').value,productId:document.getElementById('fr-prod').value,notes:document.getElementById('fr-notes').value})" style="color:var(--err);background:none;border:none;cursor:pointer">✕</button>
+    </div>`).join('')}
+    <button class="btn btn-secondary btn-sm" onclick="_recipeIngredients.push({productId:state.products[0].id,qty:1,unit:'unidad'});renderRecipeModal('${id||''}',{name:document.getElementById('fr-name').value,productId:document.getElementById('fr-prod').value,notes:document.getElementById('fr-notes')?document.getElementById('fr-notes').value:''})">+ Ingrediente</button>
+    <div class="field" style="margin-top:12px"><label>Notas</label><textarea id="fr-notes" rows="2">${r.notes||''}</textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeM('modal-recipe')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRecipe('${id||''}')">Guardar</button>
+    </div>`;
+}
+function saveRecipe(id){
+  const data={name:document.getElementById('fr-name').value.trim(),productId:document.getElementById('fr-prod').value,
+    ingredients:[..._recipeIngredients],notes:document.getElementById('fr-notes').value};
+  if(!data.name){toast('Nombre requerido','error');return;}
+  if(id){Object.assign(state.recipes.find(r=>r.id===id),data);}
+  else{state.recipes.push({id:uid(),...data});}
+  closeM('modal-recipe');toast('Receta guardada','success');saveState();render();
+}
+function deleteRecipe(id){
+  if(!confirm('¿Eliminar receta?'))return;
+  state.recipes=state.recipes.filter(r=>r.id!==id);toast('Receta eliminada','warning');saveState();render();
+}
+
+/* PROMOTIONS */
+function renderPromociones(){
+  return`<div class="section-header"><div class="section-title">Promociones</div>
+    <button class="btn btn-primary" onclick="openPromoModal()">+ Nueva Promoción</button></div>
+  <div class="card">
+    <table><thead><tr><th>Nombre</th><th>Producto</th><th>Tipo</th><th>Valor</th><th>Desde</th><th>Hasta</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${state.promotions.map(p=>`<tr>
+      <td>${p.name}</td><td>${getP(p.productId).name}</td>
+      <td>${p.type==='percent'?'Porcentaje':'Fijo'}</td>
+      <td>${p.type==='percent'?p.value+'%':fmt(p.value)}</td>
+      <td>${fmtD(p.startDate)}</td><td>${fmtD(p.endDate)}</td>
+      <td><span class="badge ${p.active?'badge-ok':'badge-gray'}">${p.active?'Activa':'Inactiva'}</span></td>
+      <td><div class="row-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openPromoModal('${p.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePromo('${p.id}')">Eliminar</button>
+      </div></td>
+    </tr>`).join('')}</tbody></table>
+  </div>
+  <div id="modal-promo" class="modal-overlay" onclick="if(event.target===this)closeM('modal-promo')">
+    <div class="modal"><div id="modal-promo-body"></div></div>
+  </div>`;
+}
+function openPromoModal(id){
+  const p=id?state.promotions.find(x=>x.id===id):{name:'',productId:state.products[0].id,type:'percent',value:10,active:true,startDate:new Date().toISOString().slice(0,10),endDate:''};
+  document.getElementById('modal-promo-body').innerHTML=`
+    <div class="modal-title">${id?'Editar':'Nueva'} Promoción <button class="modal-close" onclick="closeM('modal-promo')">✕</button></div>
+    <div class="field"><label>Nombre</label><input id="fp2-name" value="${p.name}"></div>
+    <div class="field"><label>Producto</label><select id="fp2-prod">${state.products.map(x=>`<option value="${x.id}"${p.productId===x.id?' selected':''}>${x.name}</option>`).join('')}</select></div>
+    <div class="grid2">
+      <div class="field"><label>Tipo</label><select id="fp2-type"><option value="percent"${p.type==='percent'?' selected':''}>Porcentaje (%)</option><option value="fixed"${p.type==='fixed'?' selected':''}>Fijo ($)</option></select></div>
+      <div class="field"><label>Valor</label><input type="number" id="fp2-val" value="${p.value}"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Desde</label><input type="date" id="fp2-from" value="${p.startDate?p.startDate.slice(0,10):''}"></div>
+      <div class="field"><label>Hasta</label><input type="date" id="fp2-to" value="${p.endDate?p.endDate.slice(0,10):''}"></div>
+    </div>
+    <div class="field"><label><input type="checkbox" id="fp2-active" ${p.active?'checked':''}> Activa</label></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeM('modal-promo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePromo('${id||''}')">Guardar</button>
+    </div>`;
+  openM('modal-promo');
+}
+function savePromo(id){
+  const data={name:document.getElementById('fp2-name').value.trim(),productId:document.getElementById('fp2-prod').value,
+    type:document.getElementById('fp2-type').value,value:parseFloat(document.getElementById('fp2-val').value)||0,
+    startDate:document.getElementById('fp2-from').value,endDate:document.getElementById('fp2-to').value,
+    active:document.getElementById('fp2-active').checked};
+  if(!data.name){toast('Nombre requerido','error');return;}
+  if(id){Object.assign(state.promotions.find(p=>p.id===id),data);}
+  else{state.promotions.push({id:uid(),...data});}
+  closeM('modal-promo');toast('Promoción guardada','success');saveState();render();
+}
+function deletePromo(id){
+  if(!confirm('¿Eliminar promoción?'))return;
+  state.promotions=state.promotions.filter(p=>p.id!==id);toast('Promoción eliminada','warning');saveState();render();
+}
+
+/* REPORTS */
+function renderReportes(){
+  const today=new Date();today.setHours(23,59,59,999);
+  const d30=new Date(today);d30.setDate(d30.getDate()-30);d30.setHours(0,0,0,0);
+  const fromDate=state.ui.reportFrom?new Date(state.ui.reportFrom):d30;
+  const toDate=state.ui.reportTo?new Date(state.ui.reportTo+'T23:59:59'):today;
+  const sales=state.sales.filter(s=>!s.void&&new Date(s.date)>=fromDate&&new Date(s.date)<=toDate);
+  const totalRev=sales.reduce((t,s)=>t+s.total,0);
+  const totalCost=sales.reduce((t,s)=>t+s.items.reduce((st,item)=>st+(getP(item.productId).cost||0)*item.qty,0),0);
+  const margin=totalRev?Math.round((totalRev-totalCost)/totalRev*100):0;
+
+  // Product breakdown
+  const prodMap={};
+  sales.forEach(s=>s.items.forEach(item=>{
+    if(!prodMap[item.productId])prodMap[item.productId]={name:item.name,qty:0,rev:0,cost:0};
+    prodMap[item.productId].qty+=item.qty;
+    prodMap[item.productId].rev+=item.subtotal;
+    prodMap[item.productId].cost+=(getP(item.productId).cost||0)*item.qty;
+  }));
+  const topProds=Object.values(prodMap).sort((a,b)=>b.rev-a.rev).slice(0,10);
+
+  // Method breakdown
+  const methMap={};
+  sales.forEach(s=>{methMap[s.payment.method]=(methMap[s.payment.method]||0)+s.total;});
+
+  // Daily data for chart (last 30 days within range)
+  const days=Math.min(30,Math.round((toDate-fromDate)/(1000*60*60*24))+1);
+  const labels=[],revData=[],costData=[];
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(toDate);d.setDate(d.getDate()-i);d.setHours(0,0,0,0);
+    const next=new Date(d);next.setDate(d.getDate()+1);
+    const daySales=sales.filter(s=>new Date(s.date)>=d&&new Date(s.date)<next);
+    const dayRev=daySales.reduce((t,s)=>t+s.total,0);
+    const dayCost=daySales.reduce((t,s)=>t+s.items.reduce((st,item)=>st+(getP(item.productId).cost||0)*item.qty,0),0);
+    labels.push(d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'}));
+    revData.push(dayRev);costData.push(dayCost);
+  }
+
+  setTimeout(()=>{
+    const bc=document.getElementById('report-chart');
+    if(bc){if(_charts.report){_charts.report.destroy();}
+      _charts.report=new Chart(bc,{type:'bar',data:{labels,datasets:[
+        {label:'Ingresos',data:revData,backgroundColor:'#f87839',borderRadius:4},
+        {label:'Costos',data:costData,backgroundColor:'#dbeafe',borderRadius:4}
+      ]},options:{plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+    }
+  },100);
+
+  return`<div class="section-title" style="margin-bottom:16px">Reportes</div>
+  <div class="filters-row">
+    <span style="font-size:13px;font-weight:500">Desde:</span>
+    <input type="date" value="${state.ui.reportFrom||fromDate.toISOString().slice(0,10)}" onchange="state.ui.reportFrom=this.value;saveState();render()" style="max-width:150px">
+    <span style="font-size:13px;font-weight:500">Hasta:</span>
+    <input type="date" value="${state.ui.reportTo||toDate.toISOString().slice(0,10)}" onchange="state.ui.reportTo=this.value;saveState();render()" style="max-width:150px">
+    <button class="btn btn-primary btn-sm" onclick="toast('Exportando...','ok')">📥 Exportar</button>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Ingresos</div><div class="kpi-value" style="color:var(--pr)">${fmt(totalRev)}</div></div>
+    <div class="kpi"><div class="kpi-label">Costo total</div><div class="kpi-value" style="color:var(--err)">${fmt(totalCost)}</div></div>
+    <div class="kpi"><div class="kpi-label">Utilidad bruta</div><div class="kpi-value" style="color:var(--ok)">${fmt(totalRev-totalCost)}</div></div>
+    <div class="kpi"><div class="kpi-label">Margen</div><div class="kpi-value">${margin}%</div></div>
+  </div>
+  <div class="card" style="margin-bottom:16px"><h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Ingresos vs Costos</h3><canvas id="report-chart" height="80"></canvas></div>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+    <div class="card"><h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Productos más vendidos</h3>
+      <table><thead><tr><th>Producto</th><th>Cant.</th><th>Ingresos</th><th>Costo</th><th>Margen</th></tr></thead>
+      <tbody>${topProds.map(p=>`<tr>
+        <td>${p.name}</td><td>${p.qty}</td><td>${fmt(p.rev)}</td><td>${fmt(p.cost)}</td>
+        <td>${p.rev?Math.round((p.rev-p.cost)/p.rev*100):0}%</td>
+      </tr>`).join('')}</tbody></table>
+    </div>
+    <div class="card"><h3 style="font-size:14px;font-weight:600;margin-bottom:16px">Por método de pago</h3>
+      ${Object.entries(methMap).map(([m,v])=>`<div class="total-row" style="font-size:14px;margin-bottom:8px"><span>${m}</span><span style="font-weight:600">${fmt(v)}</span></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* USERS */
+function renderUsuarios(){
+  return`<div class="section-header"><div class="section-title">Usuarios</div>
+    <button class="btn btn-primary" onclick="openUserModal()">+ Nuevo Usuario</button></div>
+  <div class="card">
+    <table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${state.users.map(u=>`<tr>
+      <td>${u.name}</td><td>${u.email}</td>
+      <td><span class="badge ${u.role==='Administrador'?'badge-info':'badge-gray'}">${u.role}</span></td>
+      <td><span class="badge ${u.active?'badge-ok':'badge-gray'}">${u.active?'Activo':'Inactivo'}</span></td>
+      <td><div class="row-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openUserModal('${u.id}')">Editar</button>
+        ${u.id!==state.currentUser.id?`<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">Eliminar</button>`:''}
+      </div></td>
+    </tr>`).join('')}</tbody></table>
+  </div>
+  <div id="modal-user" class="modal-overlay" onclick="if(event.target===this)closeM('modal-user')">
+    <div class="modal"><div id="modal-user-body"></div></div>
+  </div>`;
+}
+function openUserModal(id){
+  const u=id?state.users.find(x=>x.id===id):{name:'',email:'',role:'Cajero',pin:'',active:true};
+  document.getElementById('modal-user-body').innerHTML=`
+    <div class="modal-title">${id?'Editar':'Nuevo'} Usuario <button class="modal-close" onclick="closeM('modal-user')">✕</button></div>
+    <div class="field"><label>Nombre</label><input id="fu-name" value="${u.name}"></div>
+    <div class="field"><label>Email</label><input id="fu-email" value="${u.email}"></div>
+    <div class="grid2">
+      <div class="field"><label>Rol</label><select id="fu-role"><option${u.role==='Administrador'?' selected':''}>Administrador</option><option${u.role==='Cajero'?' selected':''}>Cajero</option></select></div>
+      <div class="field"><label>PIN (4 dígitos)</label><input type="password" maxlength="4" id="fu-pin" value="${u.pin}" placeholder="****"></div>
+    </div>
+    <div class="field"><label><input type="checkbox" id="fu-active" ${u.active?'checked':''}> Activo</label></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeM('modal-user')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser('${id||''}')">Guardar</button>
+    </div>`;
+  openM('modal-user');
+}
+function saveUser(id){
+  const data={name:document.getElementById('fu-name').value.trim(),email:document.getElementById('fu-email').value,
+    role:document.getElementById('fu-role').value,pin:document.getElementById('fu-pin').value,
+    active:document.getElementById('fu-active').checked};
+  if(!data.name){toast('Nombre requerido','error');return;}
+  if(data.pin&&data.pin.length!==4){toast('PIN debe tener 4 dígitos','error');return;}
+  if(id){
+    const u=state.users.find(x=>x.id===id);
+    if(!data.pin)data.pin=u.pin;
+    Object.assign(u,data);
+  } else {
+    if(!data.pin){toast('PIN requerido','error');return;}
+    state.users.push({id:uid(),...data});
+  }
+  closeM('modal-user');toast('Usuario guardado','success');saveState();render();
+}
+function deleteUser(id){
+  if(!confirm('¿Eliminar usuario?'))return;
+  state.users=state.users.filter(u=>u.id!==id);toast('Usuario eliminado','warning');saveState();render();
+}
+
+/* SETTINGS */
+function renderConfiguracion(){
+  const s=state.settings;
+  return`<div class="section-title" style="margin-bottom:20px">Configuración</div>
+  <div class="card" style="max-width:500px">
+    <div class="field"><label>Nombre del negocio</label><input id="cfg-name" value="${s.businessName}"></div>
+    <div class="grid2">
+      <div class="field"><label>RUT</label><input id="cfg-rut" value="${s.rut}"></div>
+      <div class="field"><label>Teléfono</label><input id="cfg-phone" value="${s.phone}"></div>
+    </div>
+    <div class="field"><label>Dirección</label><input id="cfg-addr" value="${s.address}"></div>
+    <div class="field"><label>Pie de recibo</label><input id="cfg-footer" value="${s.receiptFooter}"></div>
+    <div class="field"><label>Moneda</label><select id="cfg-currency"><option${s.currency==='CLP'?' selected':''}>CLP</option><option${s.currency==='USD'?' selected':''}>USD</option></select></div>
+    <button class="btn btn-primary" onclick="saveConfig()">Guardar cambios</button>
+  </div>`;
+}
+function saveConfig(){
+  state.settings.businessName=document.getElementById('cfg-name').value;
+  state.settings.rut=document.getElementById('cfg-rut').value;
+  state.settings.phone=document.getElementById('cfg-phone').value;
+  state.settings.address=document.getElementById('cfg-addr').value;
+  state.settings.receiptFooter=document.getElementById('cfg-footer').value;
+  state.settings.currency=document.getElementById('cfg-currency').value;
+  toast('Configuración guardada','success');saveState();render();
+}
+
+/* ROUTER */
+const TITLES={inicio:'Inicio',venta:'Punto de Venta',ventas:'Historial de Ventas',caja:'Caja',
+  productos:'Productos',inventario:'Inventario',clientes:'Clientes',proveedores:'Proveedores',
+  compras:'Compras',gastos:'Gastos',recetas:'Recetas',promociones:'Promociones',
+  reportes:'Reportes',usuarios:'Usuarios',configuracion:'Configuración'};
+
+function render(){
+  const app=document.getElementById('app');
+  const isCajero=state.currentUser&&state.currentUser.role==='Cajero';
+  app.className=isCajero?'cashier-mode':'';
+  if(!state.currentUser||state.ui.route==='acceso'){
+    app.className='';app.innerHTML=renderLogin();return;
+  }
+  const route=state.ui.route;
+  const title=TITLES[route]||route;
+  let content='';
+  if(route==='inicio')content=renderDashboard();
+  else if(route==='venta')content=renderPOS();
+  else if(route==='ventas')content=renderVentas();
+  else if(route==='caja')content=renderCaja();
+  else if(route==='productos')content=renderProductos();
+  else if(route==='inventario')content=renderInventario();
+  else if(route==='clientes')content=renderClientes();
+  else if(route==='proveedores')content=renderProveedores();
+  else if(route==='compras')content=renderCompras();
+  else if(route==='gastos')content=renderGastos();
+  else if(route==='recetas')content=renderRecetas();
+  else if(route==='promociones')content=renderPromociones();
+  else if(route==='reportes')content=renderReportes();
+  else if(route==='usuarios')content=renderUsuarios();
+  else if(route==='configuracion')content=renderConfiguracion();
+  else content=`<div class="empty">Pantalla no encontrada</div>`;
+  app.innerHTML=shell(content,title);
+}
+
+render();
+</script>
+</body>
+</html>
