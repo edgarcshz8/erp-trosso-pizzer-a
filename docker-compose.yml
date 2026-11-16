@@ -9,6 +9,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3001
+    expose:
+      - "3001"
     volumes:
       - uploads:/app/uploads
 
@@ -17,8 +19,10 @@ services:
       context: ./client
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "80:80"
+    # Sin "ports": Traefik (Dokploy) ya usa el 80/443 del host.
+    # El dominio se configura en la pestaña Domains apuntando a este servicio, puerto 80.
+    expose:
+      - "80"
     depends_on:
       - api
 
