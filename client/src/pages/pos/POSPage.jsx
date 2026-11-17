@@ -37,6 +37,7 @@ export default function POSPage() {
   const [showCartMobile, setShowCartMobile] = useState(false)
 
   const [pendingProduct, setPendingProduct] = useState(null)
+  const [showPizzaOption, setShowPizzaOption] = useState(false)
   const [openingAmount, setOpeningAmount] = useState('')
   const [payLoading, setPayLoading] = useState(false)
   const [openShiftLoading, setOpenShiftLoading] = useState(false)
@@ -46,17 +47,7 @@ export default function POSPage() {
     api.get('/categories').then(r => setCategories(r.data)).catch(() => {})
   }, [])
 
-  const addToCart = useCallback((product) => {
-    if (product.is_pizza) {
-      setPendingProduct(product)
-      setShowHalfHalf(true)
-      return
-    }
-
-    if (product.is_pizza || product.category_name === 'Pizzas') {
-      // Show extras option for pizzas
-    }
-
+  const addWholeToCart = useCallback((product) => {
     const price = wholesale && product.wholesale_price
       ? parseFloat(product.wholesale_price)
       : parseFloat(product.price)
@@ -79,6 +70,15 @@ export default function POSPage() {
       }]
     })
   }, [wholesale])
+
+  const addToCart = useCallback((product) => {
+    if (product.is_pizza) {
+      setPendingProduct(product)
+      setShowPizzaOption(true)
+      return
+    }
+    addWholeToCart(product)
+  }, [addWholeToCart])
 
   const handleHalfHalfConfirm = ({ half1, half2, price }) => {
     setCart(prev => [...prev, {
@@ -297,6 +297,42 @@ export default function POSPage() {
         onConfirm={handlePaymentConfirm}
         loading={payLoading}
       />
+
+      {/* Pizza option: entera o mitad y mitad */}
+      <Modal
+        open={showPizzaOption}
+        onClose={() => { setShowPizzaOption(false); setPendingProduct(null) }}
+        title={pendingProduct?.name || 'Pizza'}
+        size="sm"
+        footer={null}
+      >
+        <p className="text-sm text-gray-500 mb-4">¿Cómo la agregas?</p>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => {
+              setShowPizzaOption(false)
+              addWholeToCart(pendingProduct)
+              setPendingProduct(null)
+            }}
+            className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 hover:border-brand-red hover:bg-red-50 transition-all"
+          >
+            <span className="text-3xl">🍕</span>
+            <span className="font-semibold text-sm text-gray-700">Pizza entera</span>
+            <span className="text-xs text-gray-400">Un solo sabor</span>
+          </button>
+          <button
+            onClick={() => {
+              setShowPizzaOption(false)
+              setShowHalfHalf(true)
+            }}
+            className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 hover:border-brand-red hover:bg-red-50 transition-all"
+          >
+            <span className="text-3xl">🍕½</span>
+            <span className="font-semibold text-sm text-gray-700">Mitad y mitad</span>
+            <span className="text-xs text-gray-400">Dos sabores</span>
+          </button>
+        </div>
+      </Modal>
 
       <HalfHalfModal
         open={showHalfHalf}
