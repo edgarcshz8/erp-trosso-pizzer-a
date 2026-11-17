@@ -5,7 +5,7 @@ import {
   HomeIcon, ShoppingCartIcon, ClipboardDocumentListIcon, CubeIcon,
   BeakerIcon, TagIcon, CurrencyDollarIcon, ChartBarIcon, UsersIcon,
   Cog6ToothIcon, ArrowRightOnRectangleIcon, TruckIcon, SparklesIcon,
-  RectangleGroupIcon
+  RectangleGroupIcon, UserCircleIcon
 } from '@heroicons/react/24/outline'
 
 const NAV_ADMIN = [
@@ -27,6 +27,7 @@ const NAV_ADMIN = [
 const NAV_CASHIER = [
   { to: '/pos', icon: ShoppingCartIcon, label: 'Punto de Venta' },
   { to: '/admin/shifts', icon: CurrencyDollarIcon, label: 'Turnos' },
+  { to: '/profile', icon: UserCircleIcon, label: 'Mi perfil' },
 ]
 
 export default function Sidebar({ onClose }) {
