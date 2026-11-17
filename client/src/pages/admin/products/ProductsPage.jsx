@@ -12,6 +12,7 @@ import EmptyState from '../../../components/EmptyState'
 function ProductForm({ product, categories, onSave, onClose }) {
   const [form, setForm] = useState({
     name: product?.name || '',
+    description: product?.description || '',
     category_id: product?.category_id || '',
     price: product?.price || '',
     wholesale_price: product?.wholesale_price || '',
@@ -75,6 +76,16 @@ function ProductForm({ product, categories, onSave, onClose }) {
         <div className="col-span-2">
           <label className="label">Nombre del producto *</label>
           <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Pizza Margarita" />
+        </div>
+        <div className="col-span-2">
+          <label className="label">Descripción</label>
+          <textarea
+            className="input resize-none"
+            rows={2}
+            value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+            placeholder="Ej: Salsa de tomate, mozzarella, albahaca fresca"
+          />
         </div>
         <div>
           <label className="label">Categoría</label>

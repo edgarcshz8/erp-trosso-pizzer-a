@@ -72,16 +72,17 @@ router.get('/:id', requireAuth, async (req, res) => {
 // POST /api/products
 router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
   try {
-    const { name, category_id, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule } = req.body;
+    const { name, category_id, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, description } = req.body;
     if (!name || !type) return res.status(400).json({ error: 'Nombre y tipo requeridos' });
 
     const image_url = req.file ? `/uploads/products/${req.file.filename}` : null;
 
     const result = await pool.query(`
-      INSERT INTO products (name, category_id, image_url, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
+      INSERT INTO products (name, category_id, image_url, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, description)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *
     `, [name, category_id || null, image_url, price || 0, wholesale_price || null,
-        type, indirect_cost || 0, is_pizza === 'true' || is_pizza === true, half_half_rule || 'expensive']);
+        type, indirect_cost || 0, is_pizza === 'true' || is_pizza === true, half_half_rule || 'expensive',
+        description || null]);
 
     // Handle sizes
     const sizes = req.body.sizes ? JSON.parse(req.body.sizes) : [];
@@ -103,7 +104,7 @@ router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
 router.put('/:id', requireAdmin, upload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category_id, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, active } = req.body;
+    const { name, category_id, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, active, description } = req.body;
 
     const existing = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
     if (!existing.rows[0]) return res.status(404).json({ error: 'Producto no encontrado' });
@@ -124,11 +125,13 @@ router.put('/:id', requireAdmin, upload.single('image'), async (req, res) => {
         indirect_cost = COALESCE($7, indirect_cost),
         is_pizza = COALESCE($8, is_pizza),
         half_half_rule = COALESCE($9, half_half_rule),
-        active = COALESCE($10, active)
-      WHERE id = $11 RETURNING *
+        active = COALESCE($10, active),
+        description = $11
+      WHERE id = $12 RETURNING *
     `, [name, category_id || null, image_url, price, wholesale_price || null,
         type, indirect_cost, is_pizza !== undefined ? (is_pizza === 'true' || is_pizza === true) : existing.rows[0].is_pizza,
-        half_half_rule, active !== undefined ? (active === 'true' || active === true) : existing.rows[0].active, id]);
+        half_half_rule, active !== undefined ? (active === 'true' || active === true) : existing.rows[0].active,
+        description !== undefined ? (description || null) : existing.rows[0].description, id]);
 
     // Update sizes if provided
     if (req.body.sizes) {
