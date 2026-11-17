@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../lib/api'
 import { useShift } from '../../context/ShiftContext'
@@ -21,6 +21,7 @@ export default function POSPage() {
 
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
+  const [promotions, setPromotions] = useState([])
   const [cart, setCart] = useState([])
   const [channel, setChannel] = useState('paso')
   const [wholesale, setWholesale] = useState(false)
@@ -45,6 +46,7 @@ export default function POSPage() {
   useEffect(() => {
     api.get('/products?active=true').then(r => setProducts(r.data)).catch(() => {})
     api.get('/categories').then(r => setCategories(r.data)).catch(() => {})
+    api.get('/promotions?active_only=true').then(r => setPromotions(r.data)).catch(() => {})
   }, [])
 
   // Recalculate all cart prices when wholesale toggle changes
@@ -156,7 +158,7 @@ export default function POSPage() {
     setPayLoading(true)
 
     try {
-      const items = cart.map(item => ({
+      const items = cartWithPromos.map(item => ({
         product_id: item.product_id,
         size_id: item.size_id || null,
         quantity: item.quantity,
@@ -205,7 +207,32 @@ export default function POSPage() {
     }
   }
 
-  const total = cart.reduce((s, i) => s + i.unit_price * i.quantity - (i.discount || 0), 0)
+  // Apply active promotions to cart items for display and submission
+  const cartWithPromos = useMemo(() => {
+    return cart.map(item => {
+      const promo = promotions.find(p =>
+        p.applies_to === 'all' ||
+        (p.applies_to === 'product' && parseInt(p.product_id) === parseInt(item.product_id))
+      )
+      if (!promo) return { ...item, discount: 0, promo_name: null }
+
+      const unitPrice = item.unit_price
+      const qty = item.quantity
+      let discount = 0
+
+      if (promo.type === 'percentage') {
+        discount = Math.round(unitPrice * qty * parseFloat(promo.value) / 100)
+      } else if (promo.type === 'discount') {
+        discount = parseFloat(promo.value) * qty
+      } else if (promo.type === '2x1') {
+        discount = Math.floor(qty / 2) * unitPrice
+      }
+
+      return { ...item, discount, promo_name: promo.name }
+    })
+  }, [cart, promotions])
+
+  const total = cartWithPromos.reduce((s, i) => s + i.unit_price * i.quantity - (i.discount || 0), 0)
 
   return (
     <div className="fixed inset-0 bg-gray-50 flex flex-col" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -270,7 +297,7 @@ export default function POSPage() {
         {/* Cart panel - desktop */}
         <div className="hidden md:flex w-96 flex-shrink-0">
           <CartPanel
-            items={cart}
+            items={cartWithPromos}
             channel={channel}
             onChannelChange={setChannel}
             wholesale={wholesale}
@@ -300,7 +327,7 @@ export default function POSPage() {
             </div>
             <div className="flex-1 overflow-hidden">
               <CartPanel
-                items={cart}
+                items={cartWithPromos}
                 channel={channel}
                 onChannelChange={setChannel}
                 wholesale={wholesale}
