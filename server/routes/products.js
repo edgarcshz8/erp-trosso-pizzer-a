@@ -38,7 +38,7 @@ router.get('/', requireAuth, async (req, res) => {
     if (active !== undefined) { query += ` AND p.active = $${idx++}`; params.push(active === 'true'); }
     if (is_pizza !== undefined) { query += ` AND p.is_pizza = $${idx++}`; params.push(is_pizza === 'true'); }
 
-    query += ' GROUP BY p.id, c.name ORDER BY c.sort_order ASC, p.name ASC';
+    query += ' GROUP BY p.id, c.id ORDER BY c.sort_order ASC, p.name ASC';
 
     const result = await pool.query(query, params);
     res.json(result.rows);
@@ -59,7 +59,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN product_sizes ps ON ps.product_id = p.id
       WHERE p.id = $1
-      GROUP BY p.id, c.name
+      GROUP BY p.id, c.id
     `, [req.params.id]);
     if (!result.rows[0]) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json(result.rows[0]);

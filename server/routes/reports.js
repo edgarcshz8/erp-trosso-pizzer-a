@@ -133,13 +133,6 @@ router.get('/income-statement', requireAdmin, async (req, res) => {
     `, [startDate, endDate + ' 23:59:59']);
 
     // Expenses
-    const expResult = await pool.query(`
-      SELECT COALESCE(SUM(amount), 0) as total_expenses,
-        json_agg(jsonb_build_object('category', category, 'amount', SUM(amount)))
-        FROM expenses WHERE date >= $1 AND date <= $2
-        GROUP BY category
-    `, [startDate, endDate]);
-
     const expTotal = await pool.query(
       'SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE date >= $1 AND date <= $2',
       [startDate, endDate]
