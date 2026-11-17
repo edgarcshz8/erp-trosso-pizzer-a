@@ -201,7 +201,7 @@ export default function ShiftsPage() {
             <thead className="bg-gray-50 border-b"><tr>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Apertura</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Cajero</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Fondo</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Caja inicial</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Ventas</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
               <th className="px-4 py-3"></th>
