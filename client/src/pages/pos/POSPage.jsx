@@ -37,6 +37,8 @@ export default function POSPage() {
   const [showOpenShift, setShowOpenShift] = useState(false)
   const [showCartMobile, setShowCartMobile] = useState(false)
 
+  const [appliedPromo, setAppliedPromo] = useState(null)
+
   const [pendingProduct, setPendingProduct] = useState(null)
   const [showPizzaOption, setShowPizzaOption] = useState(false)
   const [openingAmount, setOpeningAmount] = useState('')
@@ -184,6 +186,7 @@ export default function POSPage() {
       setCart([])
       setCustomerName('')
       setCustomerAddress('')
+      setAppliedPromo(null)
       setShowPayment(false)
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error al registrar venta')
@@ -207,30 +210,31 @@ export default function POSPage() {
     }
   }
 
-  // Apply active promotions to cart items for display and submission
   const cartWithPromos = useMemo(() => {
     return cart.map(item => {
-      const promo = promotions.find(p =>
-        p.applies_to === 'all' ||
-        (p.applies_to === 'product' && parseInt(p.product_id) === parseInt(item.product_id))
-      )
-      if (!promo) return { ...item, discount: 0, promo_name: null }
+      if (!appliedPromo) return { ...item, discount: 0, promo_name: null }
+
+      const matches =
+        appliedPromo.applies_to === 'all' ||
+        (appliedPromo.applies_to === 'product' && parseInt(appliedPromo.product_id) === parseInt(item.product_id))
+
+      if (!matches) return { ...item, discount: 0, promo_name: null }
 
       const unitPrice = item.unit_price
       const qty = item.quantity
       let discount = 0
 
-      if (promo.type === 'percentage') {
-        discount = Math.round(unitPrice * qty * parseFloat(promo.value) / 100)
-      } else if (promo.type === 'discount') {
-        discount = parseFloat(promo.value) * qty
-      } else if (promo.type === '2x1') {
+      if (appliedPromo.type === 'percentage') {
+        discount = Math.round(unitPrice * qty * parseFloat(appliedPromo.value) / 100)
+      } else if (appliedPromo.type === 'discount') {
+        discount = parseFloat(appliedPromo.value) * qty
+      } else if (appliedPromo.type === '2x1') {
         discount = Math.floor(qty / 2) * unitPrice
       }
 
-      return { ...item, discount, promo_name: promo.name }
+      return { ...item, discount, promo_name: appliedPromo.name }
     })
-  }, [cart, promotions])
+  }, [cart, appliedPromo])
 
   const total = cartWithPromos.reduce((s, i) => s + i.unit_price * i.quantity - (i.discount || 0), 0)
 
@@ -310,6 +314,9 @@ export default function POSPage() {
             onCustomerNameChange={setCustomerName}
             customerAddress={customerAddress}
             onCustomerAddressChange={setCustomerAddress}
+            promotions={promotions}
+            appliedPromo={appliedPromo}
+            onApplyPromo={setAppliedPromo}
           />
         </div>
       </div>
@@ -340,6 +347,9 @@ export default function POSPage() {
                 onCustomerNameChange={setCustomerName}
                 customerAddress={customerAddress}
                 onCustomerAddressChange={setCustomerAddress}
+                promotions={promotions}
+                appliedPromo={appliedPromo}
+                onApplyPromo={setAppliedPromo}
               />
             </div>
           </div>

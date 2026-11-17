@@ -1,11 +1,12 @@
 import React from 'react'
-import { TrashIcon } from '@heroicons/react/24/outline'
+import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { formatCLP } from '../../lib/format'
 
 export default function CartPanel({
   items, channel, onChannelChange, wholesale, onWholesaleToggle,
   onQtyChange, onRemove, onPay, onClearCart,
-  customerName, onCustomerNameChange, customerAddress, onCustomerAddressChange
+  customerName, onCustomerNameChange, customerAddress, onCustomerAddressChange,
+  promotions = [], appliedPromo, onApplyPromo,
 }) {
   const subtotal = items.reduce((s, item) => s + item.unit_price * item.quantity, 0)
   const discount = items.reduce((s, item) => s + (item.discount || 0), 0)
@@ -119,6 +120,37 @@ export default function CartPanel({
           </div>
         )}
       </div>
+
+      {/* Promo selector */}
+      {promotions.length > 0 && (
+        <div className="border-t border-gray-100 px-4 py-3 flex-shrink-0">
+          <p className="text-xs text-gray-400 mb-1.5 font-medium uppercase tracking-wide">Promoción</p>
+          <div className="flex items-center gap-2">
+            <select
+              value={appliedPromo?.id || ''}
+              onChange={e => {
+                const promo = promotions.find(p => p.id === parseInt(e.target.value))
+                onApplyPromo(promo || null)
+              }}
+              className="flex-1 input text-sm py-1.5"
+            >
+              <option value="">Sin promoción</option>
+              {promotions.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            {appliedPromo && (
+              <button
+                onClick={() => onApplyPromo(null)}
+                className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                title="Quitar promoción"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Totals and pay button */}
       <div className="border-t-2 border-gray-100 p-4 bg-gray-50">
