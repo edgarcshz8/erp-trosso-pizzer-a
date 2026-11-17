@@ -12,13 +12,13 @@ import DeliveryModal from './DeliveryModal'
 import Modal from '../../components/Modal'
 import toast from 'react-hot-toast'
 import { formatCLP } from '../../lib/format'
-import { TruckIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import { TruckIcon, Bars3Icon, XMarkIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import CloseShiftModal from '../../components/CloseShiftModal'
 
 export default function POSPage() {
   const navigate = useNavigate()
   const { currentShift, refresh: refreshShift } = useShift()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
 
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -270,8 +270,17 @@ export default function POSPage() {
         <button
           onClick={() => setShowDelivery(true)}
           className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          title="Delivery"
         >
           <TruckIcon className="w-5 h-5 text-gray-500" />
+        </button>
+
+        <button
+          onClick={() => { logout(); navigate('/login') }}
+          className="p-2 hover:bg-red-50 hover:text-red-600 text-gray-500 rounded-lg transition-colors"
+          title="Cerrar sesión"
+        >
+          <ArrowRightOnRectangleIcon className="w-5 h-5" />
         </button>
 
         {/* Mobile cart toggle */}
