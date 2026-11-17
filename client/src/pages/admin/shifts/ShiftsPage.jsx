@@ -7,6 +7,7 @@ import Modal from '../../../components/Modal'
 import Badge from '../../../components/Badge'
 import { formatCLP, formatDateTime } from '../../../lib/format'
 import LoadingSpinner from '../../../components/LoadingSpinner'
+import { ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 
 function OpenShiftModal({ open, onClose, onSave }) {
   const [amount, setAmount] = useState('')
@@ -63,29 +64,55 @@ function CloseShiftModal({ shift, open, onClose, onSave }) {
 
   const totals = detail?.totals || {}
 
+  const methods = [
+    { key: 'counted_cash',     label: 'Efectivo',       expected: totals.expected_cash || 0 },
+    { key: 'counted_transfer', label: 'Transferencia',  expected: totals.by_method?.transferencia || 0 },
+    { key: 'counted_card',     label: 'Tarjeta',        expected: totals.by_method?.tarjeta || 0 },
+    { key: 'counted_junaeb',   label: 'Junaeb',         expected: totals.by_method?.junaeb || 0 },
+  ]
+
   return (
     <Modal open={open} onClose={onClose} title="Cerrar turno - Arqueo de caja" size="md"
       footer={<><button onClick={onClose} className="btn-ghost">Cancelar</button><button onClick={handleSubmit} disabled={loading} className="btn-danger">{loading ? 'Cerrando...' : 'Cerrar turno'}</button></>}>
-      {detail && (
-        <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-1 text-sm">
-          <div className="font-semibold text-gray-700 mb-2">Totales del sistema</div>
-          <div className="flex justify-between"><span className="text-gray-500">Total ventas:</span><span className="font-semibold">{formatCLP(totals.total_sales || 0)}</span></div>
-          <div className="flex justify-between"><span className="text-gray-500">Efectivo esperado:</span><span className="font-semibold">{formatCLP(totals.expected_cash || 0)}</span></div>
-          {Object.entries(totals.by_method || {}).map(([k, v]) => (
-            <div key={k} className="flex justify-between text-gray-400">
-              <span className="capitalize">{k}:</span>
-              <span>{formatCLP(v)}</span>
-            </div>
-          ))}
-        </div>
-      )}
       <div className="space-y-3">
-        <div className="font-semibold text-sm text-gray-700 mb-1">Conteo físico</div>
-        <div><label className="label">Efectivo contado</label><input type="number" className="input" value={form.counted_cash} onChange={e => setForm(f => ({ ...f, counted_cash: e.target.value }))} min="0" /></div>
-        <div><label className="label">Transferencias</label><input type="number" className="input" value={form.counted_transfer} onChange={e => setForm(f => ({ ...f, counted_transfer: e.target.value }))} min="0" /></div>
-        <div><label className="label">Tarjeta</label><input type="number" className="input" value={form.counted_card} onChange={e => setForm(f => ({ ...f, counted_card: e.target.value }))} min="0" /></div>
-        <div><label className="label">Junaeb</label><input type="number" className="input" value={form.counted_junaeb} onChange={e => setForm(f => ({ ...f, counted_junaeb: e.target.value }))} min="0" /></div>
-        <div><label className="label">Notas</label><textarea className="input min-h-[80px]" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Observaciones del turno..." /></div>
+        <div className="font-semibold text-sm text-gray-700">Conteo físico</div>
+        {methods.map(m => {
+          const counted = parseFloat(form[m.key] || 0)
+          const diff = form[m.key] !== '' ? counted - parseFloat(m.expected) : null
+          return (
+            <div key={m.key}>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">{m.label}</label>
+                {detail && (
+                  <span className="text-xs text-gray-400">
+                    Esperado: <span className="font-medium text-gray-600">{formatCLP(m.expected)}</span>
+                  </span>
+                )}
+              </div>
+              <input
+                type="number"
+                className="input"
+                value={form[m.key]}
+                onChange={e => setForm(f => ({ ...f, [m.key]: e.target.value }))}
+                min="0"
+                placeholder="0"
+              />
+              {diff !== null && (
+                <div className={`text-xs mt-1 font-medium flex items-center gap-1
+                  ${diff === 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {diff === 0
+                    ? <><CheckCircleIcon className="w-3.5 h-3.5" /> Cuadra</>
+                    : <><ExclamationTriangleIcon className="w-3.5 h-3.5" /> Diferencia: {diff > 0 ? '+' : ''}{formatCLP(diff)}</>
+                  }
+                </div>
+              )}
+            </div>
+          )
+        })}
+        <div>
+          <label className="label">Notas</label>
+          <textarea className="input min-h-[80px]" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Observaciones del turno..." />
+        </div>
       </div>
     </Modal>
   )
@@ -216,10 +243,41 @@ function ShiftDetailModal({ shift, onClose }) {
     api.get(`/shifts/${shift.id}`).then(r => setDetail(r.data)).catch(() => {})
   }, [shift.id])
 
+  const reconciliation = detail ? [
+    { label: 'Efectivo',      expected: detail.totals.expected_cash || 0,                        counted: detail.shift.counted_cash },
+    { label: 'Transferencia', expected: detail.totals.by_method?.transferencia || 0,             counted: detail.shift.counted_transfer },
+    { label: 'Tarjeta',       expected: detail.totals.by_method?.tarjeta || 0,                   counted: detail.shift.counted_card },
+    { label: 'Junaeb',        expected: detail.totals.by_method?.junaeb || 0,                    counted: detail.shift.counted_junaeb },
+  ] : []
+
+  const isClosed = detail?.shift?.status === 'closed'
+  const hasDiscrepancy = isClosed && reconciliation.some(r =>
+    Math.round(Math.abs(parseFloat(r.counted ?? 0) - parseFloat(r.expected))) > 0
+  )
+
   return (
     <Modal open={true} onClose={onClose} title={`Turno #${shift.id} - Detalle`} size="xl">
       {!detail ? <LoadingSpinner /> : (
         <div className="space-y-5">
+
+          {/* Discrepancy alert */}
+          {isClosed && hasDiscrepancy && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2 text-red-700">
+              <ExclamationTriangleIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold text-sm">Discrepancia en el arqueo de caja</div>
+                <div className="text-xs mt-0.5 text-red-500">Los montos contados no coinciden con los montos esperados del sistema.</div>
+              </div>
+            </div>
+          )}
+          {isClosed && !hasDiscrepancy && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2 text-emerald-700">
+              <CheckCircleIcon className="w-5 h-5 flex-shrink-0" />
+              <div className="font-semibold text-sm">Arqueo de caja sin discrepancias</div>
+            </div>
+          )}
+
+          {/* Summary stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-50 rounded-xl p-3 text-center">
               <div className="text-xs text-gray-400">Total ventas</div>
@@ -239,6 +297,48 @@ function ShiftDetailModal({ shift, onClose }) {
             </div>
           </div>
 
+          {/* Reconciliation table (closed shifts only) */}
+          {isClosed && (
+            <div>
+              <div className="font-semibold text-sm text-gray-700 mb-2">Arqueo de caja</div>
+              <div className="rounded-xl overflow-hidden border border-gray-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Método</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Esperado</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Contado</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Diferencia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reconciliation.map(r => {
+                      const diff = parseFloat(r.counted ?? 0) - parseFloat(r.expected)
+                      return (
+                        <tr key={r.label} className="border-t border-gray-100">
+                          <td className="px-4 py-2.5 font-medium text-gray-700">{r.label}</td>
+                          <td className="px-4 py-2.5 text-right text-gray-500">{formatCLP(r.expected)}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold">{formatCLP(r.counted ?? 0)}</td>
+                          <td className={`px-4 py-2.5 text-right font-semibold
+                            ${Math.round(Math.abs(diff)) === 0 ? 'text-gray-400' : diff > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {Math.round(Math.abs(diff)) === 0 ? '—' : `${diff > 0 ? '+' : ''}${formatCLP(diff)}`}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {detail.shift.notes && (
+                <div className="mt-3 bg-gray-50 rounded-xl p-3">
+                  <div className="text-xs font-semibold text-gray-500 mb-1">Notas del cierre</div>
+                  <div className="text-sm text-gray-700">{detail.shift.notes}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Cash movements */}
           {detail.movements.length > 0 && (
             <div>
               <div className="font-semibold text-sm text-gray-700 mb-2">Movimientos de caja</div>
@@ -258,11 +358,16 @@ function ShiftDetailModal({ shift, onClose }) {
             </div>
           )}
 
+          {/* Sales list */}
           <div>
             <div className="font-semibold text-sm text-gray-700 mb-2">Ventas del turno ({detail.sales.length})</div>
             <div className="max-h-64 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-gray-200"><th className="text-left pb-2 text-xs text-gray-400">Hora</th><th className="text-left pb-2 text-xs text-gray-400">Método</th><th className="text-right pb-2 text-xs text-gray-400">Total</th></tr></thead>
+                <thead><tr className="border-b border-gray-200">
+                  <th className="text-left pb-2 text-xs text-gray-400">Hora</th>
+                  <th className="text-left pb-2 text-xs text-gray-400">Método</th>
+                  <th className="text-right pb-2 text-xs text-gray-400">Total</th>
+                </tr></thead>
                 <tbody>
                   {detail.sales.map(s => (
                     <tr key={s.id} className="border-b border-gray-100">
@@ -275,6 +380,7 @@ function ShiftDetailModal({ shift, onClose }) {
               </table>
             </div>
           </div>
+
         </div>
       )}
     </Modal>
