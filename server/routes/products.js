@@ -3,20 +3,9 @@ const router = express.Router();
 const pool = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { uploadToR2, deleteFromR2 } = require('../lib/r2');
 
-const uploadDir = path.join(__dirname, '../uploads/products');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `product_${Date.now()}${ext}`);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 // GET /api/products
 router.get('/', requireAuth, async (req, res) => {
@@ -75,7 +64,9 @@ router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
     const { name, category_id, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, description } = req.body;
     if (!name || !type) return res.status(400).json({ error: 'Nombre y tipo requeridos' });
 
-    const image_url = req.file ? `/uploads/products/${req.file.filename}` : null;
+    const image_url = req.file
+      ? await uploadToR2(req.file.buffer, req.file.originalname, 'products')
+      : null;
 
     const result = await pool.query(`
       INSERT INTO products (name, category_id, image_url, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, description)
@@ -111,7 +102,8 @@ router.put('/:id', requireAdmin, upload.single('image'), async (req, res) => {
 
     let image_url = existing.rows[0].image_url;
     if (req.file) {
-      image_url = `/uploads/products/${req.file.filename}`;
+      await deleteFromR2(existing.rows[0].image_url);
+      image_url = await uploadToR2(req.file.buffer, req.file.originalname, 'products');
     }
 
     const result = await pool.query(`
