@@ -105,7 +105,10 @@ function ProductForm({ product, categories, onSave, onClose }) {
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.is_pizza} onChange={e => setForm(f => ({ ...f, is_pizza: e.target.checked }))} className="w-4 h-4 accent-brand-red" />
-            <span className="text-sm text-gray-700">Es pizza (mitad/mitad)</span>
+            <div>
+              <span className="text-sm text-gray-700">Es pizza</span>
+              <p className="text-xs text-gray-400">Habilita venta entera o mitad y mitad en el POS</p>
+            </div>
           </label>
         </div>
         <div>
@@ -225,7 +228,7 @@ export default function ProductsPage() {
                         )}
                         <div>
                           <div className="font-medium text-sm text-gray-800">{p.name}</div>
-                          {p.is_pizza && <div className="text-xs text-gray-400">Permite mitad/mitad</div>}
+                          {p.is_pizza && <div className="text-xs text-gray-400">Pizza · entera o mitad/mitad</div>}
                         </div>
                       </div>
                     </td>
