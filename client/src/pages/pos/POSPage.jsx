@@ -47,10 +47,25 @@ export default function POSPage() {
     api.get('/categories').then(r => setCategories(r.data)).catch(() => {})
   }, [])
 
+  // Recalculate all cart prices when wholesale toggle changes
+  useEffect(() => {
+    setCart(prev => prev.map(item => {
+      if (item.is_half_half) {
+        if (item.half1_base_price == null || item.half2_base_price == null) return item
+        const p1 = wholesale && item.half1_wholesale_price ? item.half1_wholesale_price : item.half1_base_price
+        const p2 = wholesale && item.half2_wholesale_price ? item.half2_wholesale_price : item.half2_base_price
+        return { ...item, unit_price: Math.max(p1, p2) }
+      }
+      if (item.base_price == null) return item
+      const newPrice = wholesale && item.wholesale_price ? item.wholesale_price : item.base_price
+      return { ...item, unit_price: newPrice }
+    }))
+  }, [wholesale])
+
   const addWholeToCart = useCallback((product) => {
-    const price = wholesale && product.wholesale_price
-      ? parseFloat(product.wholesale_price)
-      : parseFloat(product.price)
+    const basePrice = parseFloat(product.price)
+    const wholesalePrice = product.wholesale_price ? parseFloat(product.wholesale_price) : null
+    const price = wholesale && wholesalePrice ? wholesalePrice : basePrice
 
     setCart(prev => {
       const idx = prev.findIndex(i => i.product_id === product.id && !i.is_half_half)
@@ -63,6 +78,8 @@ export default function POSPage() {
         product_id: product.id,
         name: product.name,
         unit_price: price,
+        base_price: basePrice,
+        wholesale_price: wholesalePrice,
         quantity: 1,
         discount: 0,
         is_half_half: false,
@@ -80,18 +97,31 @@ export default function POSPage() {
     addWholeToCart(product)
   }, [addWholeToCart])
 
-  const handleHalfHalfConfirm = ({ half1, half2, price }) => {
+  const handleHalfHalfConfirm = ({ half1, half2 }) => {
+    const h1Base = parseFloat(half1.price)
+    const h1Wholesale = half1.wholesale_price ? parseFloat(half1.wholesale_price) : null
+    const h2Base = parseFloat(half2.price)
+    const h2Wholesale = half2.wholesale_price ? parseFloat(half2.wholesale_price) : null
+
+    const p1 = wholesale && h1Wholesale ? h1Wholesale : h1Base
+    const p2 = wholesale && h2Wholesale ? h2Wholesale : h2Base
+    const computedPrice = Math.max(p1, p2)
+
     setCart(prev => [...prev, {
       product_id: pendingProduct.id,
       name: pendingProduct.name,
-      unit_price: price,
+      unit_price: computedPrice,
       quantity: 1,
       discount: 0,
       is_half_half: true,
       half1_product_id: half1.id,
       half1_name: half1.name,
+      half1_base_price: h1Base,
+      half1_wholesale_price: h1Wholesale,
       half2_product_id: half2.id,
       half2_name: half2.name,
+      half2_base_price: h2Base,
+      half2_wholesale_price: h2Wholesale,
     }])
     setShowHalfHalf(false)
     setPendingProduct(null)
