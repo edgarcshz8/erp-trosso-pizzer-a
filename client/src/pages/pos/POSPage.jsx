@@ -13,6 +13,7 @@ import Modal from '../../components/Modal'
 import toast from 'react-hot-toast'
 import { formatCLP } from '../../lib/format'
 import { TruckIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import CloseShiftModal from '../../components/CloseShiftModal'
 
 export default function POSPage() {
   const navigate = useNavigate()
@@ -36,6 +37,7 @@ export default function POSPage() {
   const [showDelivery, setShowDelivery] = useState(false)
   const [showOpenShift, setShowOpenShift] = useState(false)
   const [showCartMobile, setShowCartMobile] = useState(false)
+  const [closingShift, setClosingShift] = useState(null)
 
   const [appliedPromo, setAppliedPromo] = useState(null)
 
@@ -249,9 +251,13 @@ export default function POSPage() {
         <span className="font-bold text-gray-900 flex-1">Punto de Venta</span>
 
         {currentShift ? (
-          <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg font-medium">
+          <button
+            onClick={() => setClosingShift(currentShift)}
+            className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg font-medium hover:bg-red-100 hover:text-red-700 transition-colors"
+            title="Cerrar turno"
+          >
             Turno abierto
-          </span>
+          </button>
         ) : (
           <button
             onClick={() => setShowOpenShift(true)}
@@ -445,6 +451,15 @@ export default function POSPage() {
         </div>
         <p className="text-sm text-gray-400">El turno se abrirá con el monto indicado como fondo inicial.</p>
       </Modal>
+
+      {closingShift && (
+        <CloseShiftModal
+          shift={closingShift}
+          open={true}
+          onClose={() => setClosingShift(null)}
+          onSave={() => { setClosingShift(null); refreshShift() }}
+        />
+      )}
     </div>
   )
 }
