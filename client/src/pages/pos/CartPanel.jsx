@@ -85,8 +85,10 @@ export default function CartPanel({
                   {item.notes && (
                     <div className="text-xs text-gray-400 italic mt-0.5">{item.notes}</div>
                   )}
-                  {item.discount > 0 && (
-                    <div className="text-xs text-emerald-600 font-medium">-{formatCLP(item.discount)}</div>
+                  {item.promo_name && (
+                    <div className="text-xs text-emerald-600 font-medium">
+                      🏷 {item.promo_name}{item.discount > 0 ? ` · -${formatCLP(item.discount)}` : ''}
+                    </div>
                   )}
                 </div>
 
