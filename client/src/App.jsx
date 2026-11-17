@@ -17,6 +17,7 @@ import UsersPage from './pages/admin/users/UsersPage'
 import SettingsPage from './pages/admin/settings/SettingsPage'
 import ReportsPage from './pages/admin/reports/ReportsPage'
 import ExtrasPage from './pages/admin/extras/ExtrasPage'
+import CategoriesPage from './pages/admin/categories/CategoriesPage'
 
 function RequireAuth({ children, adminOnly = false }) {
   const { isAuthenticated, user } = useAuth()
@@ -85,6 +86,9 @@ function AppRoutes() {
       } />
       <Route path="/admin/extras" element={
         <RequireAuth adminOnly><ExtrasPage /></RequireAuth>
+      } />
+      <Route path="/admin/categories" element={
+        <RequireAuth adminOnly><CategoriesPage /></RequireAuth>
       } />
 
       <Route path="/" element={

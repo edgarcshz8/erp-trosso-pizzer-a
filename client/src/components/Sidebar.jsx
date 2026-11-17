@@ -4,12 +4,14 @@ import { useAuth } from '../context/AuthContext'
 import {
   HomeIcon, ShoppingCartIcon, ClipboardDocumentListIcon, CubeIcon,
   BeakerIcon, TagIcon, CurrencyDollarIcon, ChartBarIcon, UsersIcon,
-  Cog6ToothIcon, ArrowRightOnRectangleIcon, TruckIcon, SparklesIcon
+  Cog6ToothIcon, ArrowRightOnRectangleIcon, TruckIcon, SparklesIcon,
+  RectangleGroupIcon
 } from '@heroicons/react/24/outline'
 
 const NAV_ADMIN = [
   { to: '/dashboard', icon: HomeIcon, label: 'Dashboard' },
   { to: '/pos', icon: ShoppingCartIcon, label: 'Punto de Venta' },
+  { to: '/admin/categories', icon: RectangleGroupIcon, label: 'Categorías' },
   { to: '/admin/products', icon: CubeIcon, label: 'Productos' },
   { to: '/admin/inventory', icon: BeakerIcon, label: 'Inventario' },
   { to: '/admin/recipes', icon: SparklesIcon, label: 'Recetas' },
