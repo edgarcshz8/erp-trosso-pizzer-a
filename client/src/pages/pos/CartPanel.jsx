@@ -21,7 +21,7 @@ export default function CartPanel({
             <button
               key={ch}
               onClick={() => onChannelChange(ch)}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all
+              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all
                 ${channel === ch ? 'bg-white text-brand-red shadow-sm' : 'text-gray-500'}`}
             >
               {ch === 'paso' ? 'Al paso' : 'Delivery'}
@@ -72,7 +72,7 @@ export default function CartPanel({
         ) : (
           <div className="p-2 space-y-1">
             {items.map((item, idx) => (
-              <div key={idx} className="flex items-start gap-2 p-2.5 rounded-xl hover:bg-gray-50 group">
+              <div key={idx} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 group">
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm text-gray-800 leading-tight">
                     {item.is_half_half ? `½ ${item.half1_name} + ½ ${item.half2_name}` : item.name}
@@ -94,25 +94,25 @@ export default function CartPanel({
                 </div>
 
                 {/* Qty controls */}
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
                     onClick={() => onQtyChange(idx, -1)}
-                    className="w-8 h-8 rounded-lg border border-gray-200 hover:border-brand-red hover:text-brand-red flex items-center justify-center text-lg font-bold bg-white transition-colors"
+                    className="w-10 h-10 rounded-xl border border-gray-200 hover:border-brand-red hover:text-brand-red flex items-center justify-center text-lg font-bold bg-white transition-colors active:scale-95"
                   >−</button>
-                  <span className="w-6 text-center font-bold text-sm">{item.quantity}</span>
+                  <span className="w-7 text-center font-bold text-sm">{item.quantity}</span>
                   <button
                     onClick={() => onQtyChange(idx, 1)}
-                    className="w-8 h-8 rounded-lg border border-gray-200 hover:border-brand-red hover:text-brand-red flex items-center justify-center text-lg font-bold bg-white transition-colors"
+                    className="w-10 h-10 rounded-xl border border-gray-200 hover:border-brand-red hover:text-brand-red flex items-center justify-center text-lg font-bold bg-white transition-colors active:scale-95"
                   >+</button>
                 </div>
 
-                <div className="text-right flex-shrink-0 min-w-[60px]">
+                <div className="text-right flex-shrink-0 min-w-[64px]">
                   <div className="font-bold text-sm text-gray-800">{formatCLP(item.unit_price * item.quantity)}</div>
                   <button
                     onClick={() => onRemove(idx)}
-                    className="text-gray-300 hover:text-red-500 transition-colors mt-1 opacity-0 group-hover:opacity-100"
+                    className="text-gray-300 hover:text-red-500 transition-colors mt-1"
                   >
-                    <TrashIcon className="w-3.5 h-3.5" />
+                    <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
               </div>

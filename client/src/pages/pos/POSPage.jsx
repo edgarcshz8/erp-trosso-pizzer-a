@@ -243,17 +243,17 @@ export default function POSPage() {
   return (
     <div className="fixed inset-0 bg-gray-50 flex flex-col" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
       {/* POS Topbar */}
-      <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 gap-3 flex-shrink-0 z-10">
-        <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+      <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 gap-2 flex-shrink-0 z-10">
+        <button onClick={() => navigate('/dashboard')} className="p-3 hover:bg-gray-100 rounded-xl transition-colors">
           <Bars3Icon className="w-5 h-5 text-gray-500" />
         </button>
-        <img src="/logo.jpg" alt="Trosso Colosso" className="w-8 h-8 rounded-lg object-cover" />
-        <span className="font-bold text-gray-900 flex-1">Punto de Venta</span>
+        <img src="/logo.jpg" alt="Trosso Colosso" className="w-9 h-9 rounded-xl object-cover" />
+        <span className="font-bold text-gray-900 flex-1 text-base">Punto de Venta</span>
 
         {currentShift ? (
           <button
             onClick={() => setClosingShift(currentShift)}
-            className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg font-medium hover:bg-red-100 hover:text-red-700 transition-colors"
+            className="text-sm bg-emerald-100 text-emerald-700 px-3 py-2 rounded-xl font-medium hover:bg-red-100 hover:text-red-700 transition-colors"
             title="Cerrar turno"
           >
             Turno abierto
@@ -261,7 +261,7 @@ export default function POSPage() {
         ) : (
           <button
             onClick={() => setShowOpenShift(true)}
-            className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-lg font-medium hover:bg-amber-200"
+            className="text-sm bg-amber-100 text-amber-700 px-3 py-2 rounded-xl font-medium hover:bg-amber-200"
           >
             Abrir turno
           </button>
@@ -269,7 +269,7 @@ export default function POSPage() {
 
         <button
           onClick={() => setShowDelivery(true)}
-          className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="relative p-3 hover:bg-gray-100 rounded-xl transition-colors"
           title="Delivery"
         >
           <TruckIcon className="w-5 h-5 text-gray-500" />
@@ -277,15 +277,15 @@ export default function POSPage() {
 
         <button
           onClick={() => { logout(); navigate('/login') }}
-          className="p-2 hover:bg-red-50 hover:text-red-600 text-gray-500 rounded-lg transition-colors"
+          className="p-3 hover:bg-red-50 hover:text-red-600 text-gray-500 rounded-xl transition-colors"
           title="Cerrar sesión"
         >
           <ArrowRightOnRectangleIcon className="w-5 h-5" />
         </button>
 
-        {/* Mobile cart toggle */}
+        {/* Mobile cart toggle — solo en pantallas pequeñas */}
         <button
-          className="md:hidden relative p-2 hover:bg-gray-100 rounded-lg"
+          className="md:hidden relative p-3 hover:bg-gray-100 rounded-xl"
           onClick={() => setShowCartMobile(true)}
         >
           <span className="text-sm font-bold text-brand-red">{formatCLP(total)}</span>
@@ -313,8 +313,8 @@ export default function POSPage() {
           />
         </div>
 
-        {/* Cart panel - desktop */}
-        <div className="hidden md:flex w-96 flex-shrink-0">
+        {/* Cart panel - tablet y desktop */}
+        <div className="hidden md:flex w-80 lg:w-96 flex-shrink-0">
           <CartPanel
             items={cartWithPromos}
             channel={channel}
