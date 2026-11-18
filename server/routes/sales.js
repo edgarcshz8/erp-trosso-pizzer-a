@@ -139,43 +139,16 @@ router.post('/', requireAuth, async (req, res) => {
     // Allow sales without shift in delivery mode
     const shiftId = shift ? shift.id : null;
 
-    // Load active promotions
-    const promoResult = await client.query(`
-      SELECT * FROM promotions
-      WHERE active = true
-        AND (start_date IS NULL OR start_date <= CURRENT_DATE)
-        AND (end_date IS NULL OR end_date >= CURRENT_DATE)
-    `);
-    const promotions = promoResult.rows;
-
-    // Calculate totals
+    // Calculate totals using discounts already computed by the POS (manual promo selection)
     let subtotal = 0;
     let totalDiscount = 0;
     const processedItems = [];
 
     for (const item of items) {
-      let unitPrice = parseFloat(item.unit_price);
-      let itemDiscount = 0;
+      const unitPrice = parseFloat(item.unit_price);
+      const itemDiscount = parseFloat(item.discount) || 0;
 
-      // Apply promotions
-      const matchingPromo = promotions.find(p =>
-        (p.applies_to === 'all') ||
-        (p.applies_to === 'product' && p.product_id === item.product_id)
-      );
-
-      if (matchingPromo) {
-        if (matchingPromo.type === 'percentage') {
-          itemDiscount = Math.round(unitPrice * item.quantity * parseFloat(matchingPromo.value) / 100);
-        } else if (matchingPromo.type === 'discount') {
-          itemDiscount = parseFloat(matchingPromo.value) * item.quantity;
-        } else if (matchingPromo.type === '2x1') {
-          const freeUnits = Math.floor(item.quantity / 2);
-          itemDiscount = freeUnits * unitPrice;
-        }
-      }
-
-      const lineTotal = unitPrice * item.quantity;
-      subtotal += lineTotal;
+      subtotal += unitPrice * item.quantity;
       totalDiscount += itemDiscount;
       processedItems.push({ ...item, unitPrice, itemDiscount });
     }

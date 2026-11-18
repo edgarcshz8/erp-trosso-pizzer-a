@@ -182,6 +182,7 @@ export default function POSPage() {
         size_id: item.size_id || null,
         quantity: item.quantity,
         unit_price: item.unit_price,
+        discount: item.discount || 0,
         is_half_half: item.is_half_half || false,
         half1_product_id: item.half1_product_id || null,
         half2_product_id: item.half2_product_id || null,
