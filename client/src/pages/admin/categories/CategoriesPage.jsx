@@ -1,10 +1,59 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Layout from '../../../components/Layout'
 import Modal from '../../../components/Modal'
 import LoadingSpinner from '../../../components/LoadingSpinner'
 import api from '../../../lib/api'
 import toast from 'react-hot-toast'
 import { PlusIcon, PencilIcon, TrashIcon, Bars3BottomLeftIcon } from '@heroicons/react/24/outline'
+
+const EMOJI_OPTIONS = [
+  '🍕','🍔','🌭','🌮','🌯','🥗','🍱','🥟','🍜','🍝',
+  '🥘','🍲','🍛','🍣','🍤','🥐','🥖','🧁','🍰','🎂',
+  '🍩','🍪','🍫','🍬','🧇','🥞','🍳','🥚','🥓','🥩',
+  '🧆','🫔','🍿','🧀','🥜','🍡','🍧','🍨','🍦','🧃',
+  '🥤','🧋','☕','🍵','🍺','🍷','🥛','💧','🧉','🍹',
+  '🛒','📦','🎁','⭐','🔥','✨','🏆','💎','🎯','🍽️',
+]
+
+function EmojiPicker({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handleClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full h-10 rounded-xl border-2 border-gray-200 hover:border-brand-red flex items-center justify-center text-2xl transition-colors"
+      >
+        {value || <span className="text-gray-300 text-base">+</span>}
+      </button>
+      {open && (
+        <div className="absolute top-12 left-0 z-50 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 w-64">
+          <div className="grid grid-cols-10 gap-0.5">
+            {EMOJI_OPTIONS.map(e => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => { onChange(e); setOpen(false) }}
+                className={`text-xl p-1 rounded-lg hover:bg-gray-100 transition-colors leading-none
+                  ${value === e ? 'bg-red-50 ring-2 ring-brand-red' : ''}`}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function CategoryForm({ category, onSave, onClose }) {
   const [form, setForm] = useState({
@@ -55,14 +104,11 @@ function CategoryForm({ category, onSave, onClose }) {
     >
       <div className="space-y-4">
         <div className="flex gap-3">
-          <div className="w-20 flex-shrink-0">
+          <div className="w-16 flex-shrink-0">
             <label className="label">Emoji</label>
-            <input
-              className="input text-center text-2xl"
+            <EmojiPicker
               value={form.emoji}
-              onChange={e => setForm(f => ({ ...f, emoji: e.target.value }))}
-              placeholder="🍕"
-              maxLength={2}
+              onChange={v => setForm(f => ({ ...f, emoji: v }))}
             />
           </div>
           <div className="flex-1">
