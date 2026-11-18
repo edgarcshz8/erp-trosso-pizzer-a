@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS categories (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
+  emoji VARCHAR(10) DEFAULT '',
   sort_order INT DEFAULT 0
 );
 
@@ -197,7 +198,7 @@ INSERT INTO settings (key, value) VALUES
   ('business_day_end', '04:00')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO categories (name, sort_order) VALUES
-  ('Pizzas', 1), ('Galletones', 2), ('Empanadas', 3),
-  ('Café', 4), ('Bebestibles', 5), ('Snacks', 6), ('Otros', 7)
+INSERT INTO categories (name, emoji, sort_order) VALUES
+  ('Pizzas', '🍕', 1), ('Galletones', '🍪', 2), ('Empanadas', '🥟', 3),
+  ('Café', '☕', 4), ('Bebestibles', '🥤', 5), ('Snacks', '🍿', 6), ('Otros', '📦', 7)
 ON CONFLICT DO NOTHING;

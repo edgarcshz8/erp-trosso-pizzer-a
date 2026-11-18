@@ -9,6 +9,7 @@ import { PlusIcon, PencilIcon, TrashIcon, Bars3BottomLeftIcon } from '@heroicons
 function CategoryForm({ category, onSave, onClose }) {
   const [form, setForm] = useState({
     name: category?.name || '',
+    emoji: category?.emoji || '',
     sort_order: category?.sort_order ?? '',
   })
   const [loading, setLoading] = useState(false)
@@ -19,6 +20,7 @@ function CategoryForm({ category, onSave, onClose }) {
     try {
       const payload = {
         name: form.name.trim(),
+        emoji: form.emoji.trim(),
         sort_order: form.sort_order === '' ? 0 : parseInt(form.sort_order),
       }
       if (category) {
@@ -52,16 +54,28 @@ function CategoryForm({ category, onSave, onClose }) {
       }
     >
       <div className="space-y-4">
-        <div>
-          <label className="label">Nombre *</label>
-          <input
-            className="input"
-            value={form.name}
-            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-            placeholder="Ej: Pizzas, Bebestibles, Postres"
-            autoFocus
-            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-          />
+        <div className="flex gap-3">
+          <div className="w-20 flex-shrink-0">
+            <label className="label">Emoji</label>
+            <input
+              className="input text-center text-2xl"
+              value={form.emoji}
+              onChange={e => setForm(f => ({ ...f, emoji: e.target.value }))}
+              placeholder="🍕"
+              maxLength={2}
+            />
+          </div>
+          <div className="flex-1">
+            <label className="label">Nombre *</label>
+            <input
+              className="input"
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              placeholder="Ej: Pizzas, Bebestibles, Postres"
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+            />
+          </div>
         </div>
         <div>
           <label className="label">Orden de aparición</label>
@@ -149,8 +163,8 @@ export default function CategoriesPage() {
                 <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-brand-red/10 flex items-center justify-center flex-shrink-0">
-                        <Bars3BottomLeftIcon className="w-4 h-4 text-brand-red" />
+                      <div className="w-8 h-8 rounded-lg bg-brand-red/10 flex items-center justify-center flex-shrink-0 text-lg">
+                        {cat.emoji || <Bars3BottomLeftIcon className="w-4 h-4 text-brand-red" />}
                       </div>
                       <span className="font-medium text-sm text-gray-800">{cat.name}</span>
                     </div>

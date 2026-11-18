@@ -17,11 +17,11 @@ router.get('/', requireAuth, async (req, res) => {
 // POST /api/categories
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { name, sort_order } = req.body;
+    const { name, emoji, sort_order } = req.body;
     if (!name) return res.status(400).json({ error: 'Nombre requerido' });
     const result = await pool.query(
-      'INSERT INTO categories (name, sort_order) VALUES ($1, $2) RETURNING *',
-      [name, sort_order || 0]
+      'INSERT INTO categories (name, emoji, sort_order) VALUES ($1, $2, $3) RETURNING *',
+      [name, emoji || '', sort_order || 0]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -34,10 +34,10 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, sort_order } = req.body;
+    const { name, emoji, sort_order } = req.body;
     const result = await pool.query(
-      'UPDATE categories SET name = COALESCE($1, name), sort_order = COALESCE($2, sort_order) WHERE id = $3 RETURNING *',
-      [name, sort_order, id]
+      'UPDATE categories SET name = COALESCE($1, name), emoji = COALESCE($2, emoji), sort_order = COALESCE($3, sort_order) WHERE id = $4 RETURNING *',
+      [name, emoji, sort_order, id]
     );
     if (!result.rows[0]) return res.status(404).json({ error: 'Categoría no encontrada' });
     res.json(result.rows[0]);

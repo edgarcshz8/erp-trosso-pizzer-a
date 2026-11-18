@@ -1,17 +1,7 @@
 import React from 'react'
 import { formatCLP } from '../../lib/format'
 
-const CATEGORY_EMOJI = {
-  'Pizzas': '🍕',
-  'Galletones': '🍪',
-  'Empanadas': '🥟',
-  'Café': '☕',
-  'Bebestibles': '🥤',
-  'Snacks': '🍿',
-  'Otros': '📦',
-}
-
-function ProductCard({ product, onAdd, wholesale }) {
+function ProductCard({ product, categoryEmoji, onAdd, wholesale }) {
   const price = wholesale && product.wholesale_price
     ? parseFloat(product.wholesale_price)
     : parseFloat(product.price)
@@ -31,7 +21,7 @@ function ProductCard({ product, onAdd, wholesale }) {
           />
         ) : null}
         <div className={`text-4xl mb-2 ${product.image_url ? 'hidden' : ''}`}>
-          {CATEGORY_EMOJI[product.category_name] || '📦'}
+          {categoryEmoji || '📦'}
         </div>
         <div className="font-semibold text-sm text-gray-800 leading-tight group-hover:text-brand-red transition-colors line-clamp-2">
           {product.name}
@@ -48,6 +38,8 @@ function ProductCard({ product, onAdd, wholesale }) {
 }
 
 export default function ProductGrid({ products, categories, selectedCategory, onCategoryChange, onSearch, searchQ, onAdd, wholesale }) {
+  const emojiMap = Object.fromEntries(categories.map(c => [c.name, c.emoji || '']))
+
   const filtered = products.filter(p => {
     const matchCat = selectedCategory === 'Todas' || p.category_name === selectedCategory
     const matchSearch = !searchQ || p.name.toLowerCase().includes(searchQ.toLowerCase())
@@ -69,16 +61,16 @@ export default function ProductGrid({ products, categories, selectedCategory, on
 
       {/* Category chips */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-3 flex-shrink-0 scrollbar-hide">
-        {['Todas', ...categories.map(c => c.name)].map(cat => (
+        {[{ name: 'Todas', emoji: '' }, ...categories].map(cat => (
           <button
-            key={cat}
-            onClick={() => onCategoryChange(cat)}
+            key={cat.name}
+            onClick={() => onCategoryChange(cat.name)}
             className={`flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-semibold border transition-all
-              ${selectedCategory === cat
+              ${selectedCategory === cat.name
                 ? 'bg-brand-red text-white border-brand-red'
                 : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'}`}
           >
-            {CATEGORY_EMOJI[cat] || ''} {cat}
+            {cat.emoji ? `${cat.emoji} ` : ''}{cat.name}
           </button>
         ))}
       </div>
@@ -96,6 +88,7 @@ export default function ProductGrid({ products, categories, selectedCategory, on
               <ProductCard
                 key={product.id}
                 product={product}
+                categoryEmoji={emojiMap[product.category_name] || ''}
                 onAdd={onAdd}
                 wholesale={wholesale}
               />
