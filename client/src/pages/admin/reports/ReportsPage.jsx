@@ -8,7 +8,7 @@ import {
 } from 'recharts'
 import LoadingSpinner from '../../../components/LoadingSpinner'
 
-const TABS = ['Ventas', 'Costos', 'Pérdidas y Ganancias', 'Balance']
+const TABS = ['Ventas', 'Costos', 'Pérdidas y Ganancias']
 const COLORS = ['#E30613', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
 
 function SalesReport({ dateFrom, dateTo }) {
@@ -203,50 +203,6 @@ function PLReport() {
   )
 }
 
-function BalanceReport() {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    api.get('/reports/balance').then(r => setData(r.data)).catch(() => {}).finally(() => setLoading(false))
-  }, [])
-
-  if (loading) return <LoadingSpinner />
-  if (!data) return null
-
-  return (
-    <div className="max-w-md space-y-4">
-      <div className="card">
-        <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total activos</div>
-        <div className="text-3xl font-bold text-brand-red">{formatCLP(data.total_assets)}</div>
-      </div>
-      <div className="card">
-        <h3 className="font-semibold text-sm text-gray-700 mb-3">Desglose</h3>
-        <div className="space-y-2 text-sm">
-          {[
-            { label: 'Efectivo en caja (turno actual)', value: data.cash_in_register },
-            { label: 'Valor del inventario', value: data.inventory_value },
-          ].map(r => (
-            <div key={r.label} className="flex justify-between py-1.5 border-b border-gray-100 last:border-0">
-              <span className="text-gray-500">{r.label}</span>
-              <span className="font-semibold">{formatCLP(r.value)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="card">
-        <h3 className="font-semibold text-sm text-gray-700 mb-3">Detalle caja</h3>
-        <div className="space-y-1 text-sm text-gray-500">
-          <div className="flex justify-between"><span>Fondo apertura:</span><span>{formatCLP(data.details.opening_cash)}</span></div>
-          <div className="flex justify-between"><span>Ventas efectivo:</span><span className="text-emerald-600">+{formatCLP(data.details.cash_sales)}</span></div>
-          <div className="flex justify-between"><span>Ingresos:</span><span className="text-emerald-600">+{formatCLP(data.details.ingresos)}</span></div>
-          <div className="flex justify-between"><span>Retiros:</span><span className="text-red-500">-{formatCLP(data.details.retiros)}</span></div>
-          <div className="flex justify-between font-bold text-gray-800 border-t border-gray-200 pt-1 mt-1"><span>Total caja:</span><span>{formatCLP(data.cash_in_register)}</span></div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState('Ventas')
@@ -305,7 +261,6 @@ export default function ReportsPage() {
       {activeTab === 'Ventas' && <SalesReport dateFrom={dateFrom} dateTo={dateTo} />}
       {activeTab === 'Costos' && <CostsReport />}
       {activeTab === 'Pérdidas y Ganancias' && <PLReport />}
-      {activeTab === 'Balance' && <BalanceReport />}
     </Layout>
   )
 }
