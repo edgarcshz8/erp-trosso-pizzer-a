@@ -216,7 +216,7 @@ router.post('/', requireAuth, async (req, res) => {
         for (const extra of item.extras) {
           await client.query(
             'INSERT INTO sale_item_extras (sale_item_id, extra_id, quantity, unit_price) VALUES ($1, $2, $3, $4)',
-            [itemResult.rows[0].id, extra.extra_id, extra.quantity || 1, extra.unit_price || 0]
+            [itemResult.rows[0].id, extra.id, extra.quantity || 1, extra.price || 0]
           );
         }
       }
