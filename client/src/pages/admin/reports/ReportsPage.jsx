@@ -185,7 +185,7 @@ function PLReport() {
           {months.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
         </select>
         <select className="input w-24" value={year} onChange={e => setYear(parseInt(e.target.value))}>
-          {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+          {[2024, 2025, 2026, 2027, 2028, 2029, 2030].map(y => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
 
