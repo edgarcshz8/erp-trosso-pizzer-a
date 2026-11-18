@@ -49,6 +49,22 @@ function SalesReport({ dateFrom, dateTo }) {
         ))}
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {[
+          { label: 'Venta al paso', value: summary.paso || 0, count: summary.paso_count || 0, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
+          { label: 'Venta delivery', value: summary.delivery || 0, count: summary.delivery_count || 0, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
+        ].map(ch => {
+          const pct = summary.total_revenue > 0 ? (ch.value / summary.total_revenue * 100).toFixed(0) : 0
+          return (
+            <div key={ch.label} className={`card border-2 ${ch.border} ${ch.bg}`}>
+              <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">{ch.label}</div>
+              <div className={`text-2xl font-bold ${ch.color}`}>{formatCLP(ch.value)}</div>
+              <div className="text-xs text-gray-400 mt-1">{ch.count} transacciones · {pct}% del total</div>
+            </div>
+          )
+        })}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card">
           <div className="font-semibold text-sm text-gray-700 mb-4">Por método de pago</div>

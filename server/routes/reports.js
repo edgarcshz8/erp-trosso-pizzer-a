@@ -26,7 +26,9 @@ router.get('/sales', requireAdmin, async (req, res) => {
         COALESCE(SUM(CASE WHEN payment_method = 'tarjeta' THEN total ELSE 0 END), 0) as card,
         COALESCE(SUM(CASE WHEN payment_method = 'junaeb' THEN total ELSE 0 END), 0) as junaeb,
         COALESCE(SUM(CASE WHEN channel = 'paso' THEN total ELSE 0 END), 0) as paso,
-        COALESCE(SUM(CASE WHEN channel = 'delivery' THEN total ELSE 0 END), 0) as delivery
+        COALESCE(SUM(CASE WHEN channel = 'delivery' THEN total ELSE 0 END), 0) as delivery,
+        COUNT(CASE WHEN channel = 'paso' THEN 1 END) as paso_count,
+        COUNT(CASE WHEN channel = 'delivery' THEN 1 END) as delivery_count
       FROM sales sa
       WHERE sa.status = 'paid' ${dateFilter}
     `, params);
