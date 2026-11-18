@@ -56,7 +56,7 @@ export default function ExtrasModal({ open, onClose, onConfirm, productName }) {
             onClick={() => onConfirm(selectedList)}
             className="btn-primary"
           >
-            Agregar {selectedList.length > 0 ? `(${formatCLP(totalExtras)})` : ''}
+            {selectedList.length > 0 ? `Agregar extras (${formatCLP(totalExtras)})` : 'Sin extras'}
           </button>
         </>
       }
@@ -82,12 +82,12 @@ export default function ExtrasModal({ open, onClose, onConfirm, productName }) {
                   <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => changeQty(extra.id, -1)}
-                      className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-lg font-bold hover:bg-red-50"
-                    >-</button>
-                    <span className="font-bold text-sm w-4 text-center">{sel.quantity}</span>
+                      className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-lg font-bold hover:bg-red-50 active:scale-95"
+                    >−</button>
+                    <span className="font-bold text-sm w-5 text-center">{sel.quantity}</span>
                     <button
                       onClick={() => changeQty(extra.id, 1)}
-                      className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-lg font-bold hover:bg-green-50"
+                      className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-lg font-bold hover:bg-green-50 active:scale-95"
                     >+</button>
                   </div>
                 ) : (

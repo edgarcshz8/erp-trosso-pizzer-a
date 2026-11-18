@@ -42,6 +42,7 @@ export default function POSPage() {
   const [appliedPromo, setAppliedPromo] = useState(null)
 
   const [pendingProduct, setPendingProduct] = useState(null)
+  const [pendingCartItem, setPendingCartItem] = useState(null)
   const [showPizzaOption, setShowPizzaOption] = useState(false)
   const [openingAmount, setOpeningAmount] = useState('')
   const [payLoading, setPayLoading] = useState(false)
@@ -60,11 +61,11 @@ export default function POSPage() {
         if (item.half1_base_price == null || item.half2_base_price == null) return item
         const p1 = wholesale && item.half1_wholesale_price ? item.half1_wholesale_price : item.half1_base_price
         const p2 = wholesale && item.half2_wholesale_price ? item.half2_wholesale_price : item.half2_base_price
-        return { ...item, unit_price: Math.max(p1, p2) }
+        return { ...item, unit_price: Math.max(p1, p2) + (item.extras_total || 0) }
       }
       if (item.base_price == null) return item
       const newPrice = wholesale && item.wholesale_price ? item.wholesale_price : item.base_price
-      return { ...item, unit_price: newPrice }
+      return { ...item, unit_price: newPrice + (item.extras_total || 0) }
     }))
   }, [wholesale])
 
@@ -113,10 +114,11 @@ export default function POSPage() {
     const p2 = wholesale && h2Wholesale ? h2Wholesale : h2Base
     const computedPrice = Math.max(p1, p2)
 
-    setCart(prev => [...prev, {
+    setPendingCartItem({
       product_id: pendingProduct.id,
       name: pendingProduct.name,
       unit_price: computedPrice,
+      base_price: computedPrice,
       quantity: 1,
       discount: 0,
       is_half_half: true,
@@ -128,8 +130,21 @@ export default function POSPage() {
       half2_name: half2.name,
       half2_base_price: h2Base,
       half2_wholesale_price: h2Wholesale,
-    }])
+    })
     setShowHalfHalf(false)
+    setShowExtras(true)
+  }
+
+  const handleExtrasConfirm = (extras) => {
+    const extrasTotal = extras.reduce((s, e) => s + parseFloat(e.price) * e.quantity, 0)
+    setCart(prev => [...prev, {
+      ...pendingCartItem,
+      unit_price: pendingCartItem.unit_price + extrasTotal,
+      extras,
+      extras_total: extrasTotal,
+    }])
+    setShowExtras(false)
+    setPendingCartItem(null)
     setPendingProduct(null)
   }
 
@@ -392,9 +407,22 @@ export default function POSPage() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => {
+              const basePrice = parseFloat(pendingProduct.price)
+              const wholesalePrice = pendingProduct.wholesale_price ? parseFloat(pendingProduct.wholesale_price) : null
+              const price = wholesale && wholesalePrice ? wholesalePrice : basePrice
+              setPendingCartItem({
+                product_id: pendingProduct.id,
+                name: pendingProduct.name,
+                unit_price: price,
+                base_price: basePrice,
+                wholesale_price: wholesalePrice,
+                quantity: 1,
+                discount: 0,
+                is_half_half: false,
+                category_name: pendingProduct.category_name,
+              })
               setShowPizzaOption(false)
-              addWholeToCart(pendingProduct)
-              setPendingProduct(null)
+              setShowExtras(true)
             }}
             className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 hover:border-brand-red hover:bg-red-50 transition-all"
           >
@@ -421,6 +449,15 @@ export default function POSPage() {
         onClose={() => { setShowHalfHalf(false); setPendingProduct(null) }}
         onConfirm={handleHalfHalfConfirm}
         currentProduct={pendingProduct}
+      />
+
+      <ExtrasModal
+        open={showExtras}
+        onClose={() => { setShowExtras(false); setPendingCartItem(null); setPendingProduct(null) }}
+        onConfirm={handleExtrasConfirm}
+        productName={pendingCartItem?.is_half_half
+          ? `½ ${pendingCartItem.half1_name} + ½ ${pendingCartItem.half2_name}`
+          : (pendingCartItem?.name || '')}
       />
 
       <DeliveryModal
