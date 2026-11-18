@@ -8,7 +8,7 @@ import {
 } from 'recharts'
 import LoadingSpinner from '../../../components/LoadingSpinner'
 
-const TABS = ['Ventas', 'Costos', 'P&L', 'Balance']
+const TABS = ['Ventas', 'Costos', 'Pérdidas y Ganancias', 'Balance']
 const COLORS = ['#E30613', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
 
 function SalesReport({ dateFrom, dateTo }) {
@@ -304,7 +304,7 @@ export default function ReportsPage() {
 
       {activeTab === 'Ventas' && <SalesReport dateFrom={dateFrom} dateTo={dateTo} />}
       {activeTab === 'Costos' && <CostsReport />}
-      {activeTab === 'P&L' && <PLReport />}
+      {activeTab === 'Pérdidas y Ganancias' && <PLReport />}
       {activeTab === 'Balance' && <BalanceReport />}
     </Layout>
   )
