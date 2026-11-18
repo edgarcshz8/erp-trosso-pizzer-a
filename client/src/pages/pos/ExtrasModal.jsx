@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Modal from '../../components/Modal'
 import api from '../../lib/api'
 import { formatCLP } from '../../lib/format'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 
 export default function ExtrasModal({ open, onClose, onConfirm, productName }) {
   const [extras, setExtras] = useState([])
@@ -89,6 +90,13 @@ export default function ExtrasModal({ open, onClose, onConfirm, productName }) {
                       onClick={() => changeQty(extra.id, 1)}
                       className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-lg font-bold hover:bg-green-50 active:scale-95"
                     >+</button>
+                    <button
+                      onClick={() => toggle(extra)}
+                      className="w-8 h-8 rounded-full bg-red-100 text-red-500 hover:bg-red-200 flex items-center justify-center active:scale-95 transition-colors"
+                      title="Quitar"
+                    >
+                      <XMarkIcon className="w-4 h-4" />
+                    </button>
                   </div>
                 ) : (
                   <div className="w-6 h-6 rounded-full border-2 border-gray-300" />
