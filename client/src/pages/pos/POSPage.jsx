@@ -15,6 +15,17 @@ import { formatCLP } from '../../lib/format'
 import { TruckIcon, Bars3Icon, XMarkIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import CloseShiftModal from '../../components/CloseShiftModal'
 
+const MAX_ORDERS = 5
+
+const newOrder = () => ({
+  cart: [],
+  channel: 'paso',
+  wholesale: false,
+  customerName: '',
+  customerAddress: '',
+  appliedPromo: null,
+})
+
 export default function POSPage() {
   const navigate = useNavigate()
   const { currentShift, refresh: refreshShift } = useShift()
@@ -23,13 +34,12 @@ export default function POSPage() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [promotions, setPromotions] = useState([])
-  const [cart, setCart] = useState([])
-  const [channel, setChannel] = useState('paso')
-  const [wholesale, setWholesale] = useState(false)
+
+  const [orders, setOrders] = useState(() => Array.from({ length: MAX_ORDERS }, newOrder))
+  const [activeOrderIdx, setActiveOrderIdx] = useState(0)
+
   const [searchQ, setSearchQ] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Todas')
-  const [customerName, setCustomerName] = useState('')
-  const [customerAddress, setCustomerAddress] = useState('')
 
   const [showPayment, setShowPayment] = useState(false)
   const [showHalfHalf, setShowHalfHalf] = useState(false)
@@ -38,8 +48,6 @@ export default function POSPage() {
   const [showOpenShift, setShowOpenShift] = useState(false)
   const [showCartMobile, setShowCartMobile] = useState(false)
   const [closingShift, setClosingShift] = useState(null)
-
-  const [appliedPromo, setAppliedPromo] = useState(null)
 
   const [pendingProduct, setPendingProduct] = useState(null)
   const [pendingCartItem, setPendingCartItem] = useState(null)
@@ -54,46 +62,48 @@ export default function POSPage() {
     api.get('/promotions?active_only=true').then(r => setPromotions(r.data)).catch(() => {})
   }, [])
 
-  // Recalculate all cart prices when wholesale toggle changes
-  useEffect(() => {
-    setCart(prev => prev.map(item => {
-      if (item.is_half_half) {
-        if (item.half1_base_price == null || item.half2_base_price == null) return item
-        const p1 = wholesale && item.half1_wholesale_price ? item.half1_wholesale_price : item.half1_base_price
-        const p2 = wholesale && item.half2_wholesale_price ? item.half2_wholesale_price : item.half2_base_price
-        return { ...item, unit_price: Math.max(p1, p2) + (item.extras_total || 0) }
-      }
-      if (item.base_price == null) return item
-      const newPrice = wholesale && item.wholesale_price ? item.wholesale_price : item.base_price
-      return { ...item, unit_price: newPrice + (item.extras_total || 0) }
-    }))
-  }, [wholesale])
+  // Active order helpers
+  const activeOrder = orders[activeOrderIdx]
+  const { cart, channel, wholesale, customerName, customerAddress, appliedPromo } = activeOrder
+
+  const updateActiveOrder = (updates) => {
+    setOrders(prev => prev.map((o, i) => i === activeOrderIdx ? { ...o, ...updates } : o))
+  }
+
+  const updateCart = (updater) => {
+    setOrders(prev => prev.map((o, i) =>
+      i === activeOrderIdx
+        ? { ...o, cart: typeof updater === 'function' ? updater(o.cart) : updater }
+        : o
+    ))
+  }
 
   const addWholeToCart = useCallback((product) => {
     const basePrice = parseFloat(product.price)
     const wholesalePrice = product.wholesale_price ? parseFloat(product.wholesale_price) : null
-    const price = wholesale && wholesalePrice ? wholesalePrice : basePrice
 
-    setCart(prev => {
-      const idx = prev.findIndex(i => i.product_id === product.id && !i.is_half_half)
-      if (idx >= 0) {
-        const updated = [...prev]
-        updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + 1 }
-        return updated
-      }
-      return [...prev, {
-        product_id: product.id,
-        name: product.name,
-        unit_price: price,
-        base_price: basePrice,
-        wholesale_price: wholesalePrice,
-        quantity: 1,
-        discount: 0,
-        is_half_half: false,
-        category_name: product.category_name,
-      }]
+    setOrders(prev => {
+      const order = prev[activeOrderIdx]
+      const price = order.wholesale && wholesalePrice ? wholesalePrice : basePrice
+      const idx = order.cart.findIndex(i =>
+        i.product_id === product.id && !i.is_half_half && !(i.extras?.length)
+      )
+      const newCart = idx >= 0
+        ? order.cart.map((item, i) => i === idx ? { ...item, quantity: item.quantity + 1 } : item)
+        : [...order.cart, {
+            product_id: product.id,
+            name: product.name,
+            unit_price: price,
+            base_price: basePrice,
+            wholesale_price: wholesalePrice,
+            quantity: 1,
+            discount: 0,
+            is_half_half: false,
+            category_name: product.category_name,
+          }]
+      return prev.map((o, i) => i === activeOrderIdx ? { ...o, cart: newCart } : o)
     })
-  }, [wholesale])
+  }, [activeOrderIdx])
 
   const addToCart = useCallback((product) => {
     if (product.is_pizza) {
@@ -112,13 +122,12 @@ export default function POSPage() {
 
     const p1 = wholesale && h1Wholesale ? h1Wholesale : h1Base
     const p2 = wholesale && h2Wholesale ? h2Wholesale : h2Base
-    const computedPrice = Math.max(p1, p2)
 
     setPendingCartItem({
       product_id: pendingProduct.id,
       name: pendingProduct.name,
-      unit_price: computedPrice,
-      base_price: computedPrice,
+      unit_price: Math.max(p1, p2),
+      base_price: Math.max(p1, p2),
       quantity: 1,
       discount: 0,
       is_half_half: true,
@@ -137,7 +146,7 @@ export default function POSPage() {
 
   const handleExtrasConfirm = (extras) => {
     const extrasTotal = extras.reduce((s, e) => s + parseFloat(e.price) * e.quantity, 0)
-    setCart(prev => [...prev, {
+    updateCart(prev => [...prev, {
       ...pendingCartItem,
       unit_price: pendingCartItem.unit_price + extrasTotal,
       extras,
@@ -149,19 +158,31 @@ export default function POSPage() {
   }
 
   const handleQtyChange = (idx, delta) => {
-    setCart(prev => {
-      const updated = [...prev]
-      const newQty = updated[idx].quantity + delta
-      if (newQty <= 0) {
-        return prev.filter((_, i) => i !== idx)
-      }
-      updated[idx] = { ...updated[idx], quantity: newQty }
-      return updated
+    updateCart(prev => {
+      const newQty = prev[idx].quantity + delta
+      if (newQty <= 0) return prev.filter((_, i) => i !== idx)
+      return prev.map((item, i) => i === idx ? { ...item, quantity: newQty } : item)
     })
   }
 
   const handleRemove = (idx) => {
-    setCart(prev => prev.filter((_, i) => i !== idx))
+    updateCart(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const handleWholesaleToggle = () => {
+    const newWholesale = !wholesale
+    const updatedCart = cart.map(item => {
+      if (item.is_half_half) {
+        if (item.half1_base_price == null || item.half2_base_price == null) return item
+        const p1 = newWholesale && item.half1_wholesale_price ? item.half1_wholesale_price : item.half1_base_price
+        const p2 = newWholesale && item.half2_wholesale_price ? item.half2_wholesale_price : item.half2_base_price
+        return { ...item, unit_price: Math.max(p1, p2) + (item.extras_total || 0) }
+      }
+      if (item.base_price == null) return item
+      const newPrice = newWholesale && item.wholesale_price ? item.wholesale_price : item.base_price
+      return { ...item, unit_price: newPrice + (item.extras_total || 0) }
+    })
+    updateActiveOrder({ wholesale: newWholesale, cart: updatedCart })
   }
 
   const handlePay = () => {
@@ -200,11 +221,8 @@ export default function POSPage() {
         customer_address: customerAddress || null,
       })
 
-      toast.success('Venta registrada exitosamente')
-      setCart([])
-      setCustomerName('')
-      setCustomerAddress('')
-      setAppliedPromo(null)
+      toast.success(`Pedido ${activeOrderIdx + 1} registrado`)
+      setOrders(prev => prev.map((o, i) => i === activeOrderIdx ? newOrder() : o))
       setShowPayment(false)
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error al registrar venta')
@@ -256,6 +274,54 @@ export default function POSPage() {
 
   const total = cartWithPromos.reduce((s, i) => s + i.unit_price * i.quantity - (i.discount || 0), 0)
 
+  const orderTabs = (
+    <div className="flex gap-1 px-2 pt-2 bg-white border-b border-gray-100">
+      {orders.map((order, i) => {
+        const itemCount = order.cart.reduce((s, item) => s + item.quantity, 0)
+        const isActive = i === activeOrderIdx
+        return (
+          <button
+            key={i}
+            onClick={() => setActiveOrderIdx(i)}
+            className={`relative flex-1 py-2 text-xs font-bold rounded-t-xl transition-all active:scale-95
+              ${isActive
+                ? 'bg-brand-red text-white shadow-sm'
+                : itemCount > 0
+                  ? 'bg-red-50 text-brand-red'
+                  : 'text-gray-400 hover:bg-gray-100'}`}
+          >
+            P{i + 1}
+            {itemCount > 0 && (
+              <span className={`absolute -top-1.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center leading-none
+                ${isActive ? 'bg-white text-brand-red' : 'bg-brand-red text-white'}`}>
+                {itemCount > 9 ? '9+' : itemCount}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  const cartPanelProps = {
+    items: cartWithPromos,
+    channel,
+    onChannelChange: (v) => updateActiveOrder({ channel: v }),
+    wholesale,
+    onWholesaleToggle: handleWholesaleToggle,
+    onQtyChange: handleQtyChange,
+    onRemove: handleRemove,
+    onPay: handlePay,
+    onClearCart: () => updateActiveOrder({ cart: [] }),
+    customerName,
+    onCustomerNameChange: (v) => updateActiveOrder({ customerName: v }),
+    customerAddress,
+    onCustomerAddressChange: (v) => updateActiveOrder({ customerAddress: v }),
+    promotions,
+    appliedPromo,
+    onApplyPromo: (v) => updateActiveOrder({ appliedPromo: v }),
+  }
+
   return (
     <div className="fixed inset-0 bg-gray-50 flex flex-col" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
       {/* POS Topbar */}
@@ -299,7 +365,7 @@ export default function POSPage() {
           <ArrowRightOnRectangleIcon className="w-5 h-5" />
         </button>
 
-        {/* Mobile cart toggle — solo en pantallas pequeñas */}
+        {/* Mobile cart toggle */}
         <button
           className="md:hidden relative p-3 hover:bg-gray-100 rounded-xl"
           onClick={() => setShowCartMobile(true)}
@@ -329,26 +395,12 @@ export default function POSPage() {
           />
         </div>
 
-        {/* Cart panel - tablet y desktop */}
-        <div className="hidden md:flex w-80 lg:w-96 flex-shrink-0">
-          <CartPanel
-            items={cartWithPromos}
-            channel={channel}
-            onChannelChange={setChannel}
-            wholesale={wholesale}
-            onWholesaleToggle={() => setWholesale(w => !w)}
-            onQtyChange={handleQtyChange}
-            onRemove={handleRemove}
-            onPay={handlePay}
-            onClearCart={() => setCart([])}
-            customerName={customerName}
-            onCustomerNameChange={setCustomerName}
-            customerAddress={customerAddress}
-            onCustomerAddressChange={setCustomerAddress}
-            promotions={promotions}
-            appliedPromo={appliedPromo}
-            onApplyPromo={setAppliedPromo}
-          />
+        {/* Cart panel + order tabs — tablet y desktop */}
+        <div className="hidden md:flex flex-col w-80 lg:w-96 flex-shrink-0 bg-white border-l border-gray-200">
+          {orderTabs}
+          <div className="flex-1 overflow-hidden">
+            <CartPanel {...cartPanelProps} />
+          </div>
         </div>
       </div>
 
@@ -363,24 +415,11 @@ export default function POSPage() {
                 <XMarkIcon className="w-5 h-5 text-gray-400" />
               </button>
             </div>
+            {orderTabs}
             <div className="flex-1 overflow-hidden">
               <CartPanel
-                items={cartWithPromos}
-                channel={channel}
-                onChannelChange={setChannel}
-                wholesale={wholesale}
-                onWholesaleToggle={() => setWholesale(w => !w)}
-                onQtyChange={handleQtyChange}
-                onRemove={handleRemove}
+                {...cartPanelProps}
                 onPay={() => { setShowCartMobile(false); handlePay() }}
-                onClearCart={() => setCart([])}
-                customerName={customerName}
-                onCustomerNameChange={setCustomerName}
-                customerAddress={customerAddress}
-                onCustomerAddressChange={setCustomerAddress}
-                promotions={promotions}
-                appliedPromo={appliedPromo}
-                onApplyPromo={setAppliedPromo}
               />
             </div>
           </div>
@@ -396,7 +435,6 @@ export default function POSPage() {
         loading={payLoading}
       />
 
-      {/* Pizza option: entera o mitad y mitad */}
       <Modal
         open={showPizzaOption}
         onClose={() => { setShowPizzaOption(false); setPendingProduct(null) }}
@@ -466,7 +504,6 @@ export default function POSPage() {
         onClose={() => setShowDelivery(false)}
       />
 
-      {/* Open shift modal */}
       <Modal
         open={showOpenShift}
         onClose={() => setShowOpenShift(false)}
@@ -475,11 +512,7 @@ export default function POSPage() {
         footer={
           <>
             <button onClick={() => setShowOpenShift(false)} className="btn-ghost">Cancelar</button>
-            <button
-              onClick={handleOpenShift}
-              disabled={openShiftLoading}
-              className="btn-primary"
-            >
+            <button onClick={handleOpenShift} disabled={openShiftLoading} className="btn-primary">
               {openShiftLoading ? 'Abriendo...' : 'Abrir turno'}
             </button>
           </>
