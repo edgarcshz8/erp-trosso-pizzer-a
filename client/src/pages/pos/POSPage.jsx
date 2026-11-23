@@ -443,44 +443,86 @@ export default function POSPage() {
         footer={null}
       >
         <p className="text-sm text-gray-500 mb-4">¿Cómo la agregas?</p>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => {
-              const basePrice = parseFloat(pendingProduct.price)
-              const wholesalePrice = pendingProduct.wholesale_price ? parseFloat(pendingProduct.wholesale_price) : null
-              const price = wholesale && wholesalePrice ? wholesalePrice : basePrice
-              setPendingCartItem({
-                product_id: pendingProduct.id,
-                name: pendingProduct.name,
-                unit_price: price,
-                base_price: basePrice,
-                wholesale_price: wholesalePrice,
-                quantity: 1,
-                discount: 0,
-                is_half_half: false,
-                category_name: pendingProduct.category_name,
-              })
-              setShowPizzaOption(false)
-              setShowExtras(true)
-            }}
-            className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 hover:border-brand-red hover:bg-red-50 transition-all"
-          >
-            <span className="text-3xl">🍕</span>
-            <span className="font-semibold text-sm text-gray-700">Pizza entera</span>
-            <span className="text-xs text-gray-400">Un solo sabor</span>
-          </button>
-          <button
-            onClick={() => {
-              setShowPizzaOption(false)
-              setShowHalfHalf(true)
-            }}
-            className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-gray-200 hover:border-brand-red hover:bg-red-50 transition-all"
-          >
-            <span className="text-3xl">🍕½</span>
-            <span className="font-semibold text-sm text-gray-700">Mitad y mitad</span>
-            <span className="text-xs text-gray-400">Dos sabores</span>
-          </button>
-        </div>
+        {(() => {
+          const trozoSize = pendingProduct?.sizes?.find(s => s.name.toLowerCase().includes('trozo'))
+          const basePrice = pendingProduct ? parseFloat(pendingProduct.price) : 0
+          const wholesalePrice = pendingProduct?.wholesale_price ? parseFloat(pendingProduct.wholesale_price) : null
+          const enteraPrice = wholesale && wholesalePrice ? wholesalePrice : basePrice
+
+          const btnClass = 'flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-brand-red hover:bg-red-50 active:scale-95 transition-all text-left w-full'
+
+          return (
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setPendingCartItem({
+                    product_id: pendingProduct.id,
+                    name: pendingProduct.name,
+                    unit_price: enteraPrice,
+                    base_price: basePrice,
+                    wholesale_price: wholesalePrice,
+                    quantity: 1,
+                    discount: 0,
+                    is_half_half: false,
+                    category_name: pendingProduct.category_name,
+                  })
+                  setShowPizzaOption(false)
+                  setShowExtras(true)
+                }}
+                className={btnClass}
+              >
+                <span className="text-3xl flex-shrink-0">🍕</span>
+                <div>
+                  <div className="font-semibold text-sm text-gray-800">Pizza entera</div>
+                  <div className="text-xs text-gray-400">{formatCLP(enteraPrice)} · Un solo sabor</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => { setShowPizzaOption(false); setShowHalfHalf(true) }}
+                className={btnClass}
+              >
+                <span className="text-3xl flex-shrink-0">🍕½</span>
+                <div>
+                  <div className="font-semibold text-sm text-gray-800">Mitad y mitad</div>
+                  <div className="text-xs text-gray-400">Precio del sabor más caro · Dos sabores</div>
+                </div>
+              </button>
+
+              {trozoSize && (
+                <button
+                  onClick={() => {
+                    const sliceBase = parseFloat(trozoSize.price)
+                    const sliceWholesale = trozoSize.wholesale_price ? parseFloat(trozoSize.wholesale_price) : null
+                    const slicePrice = wholesale && sliceWholesale ? sliceWholesale : sliceBase
+                    setPendingCartItem({
+                      product_id: pendingProduct.id,
+                      name: `Trozo · ${pendingProduct.name}`,
+                      unit_price: slicePrice,
+                      base_price: sliceBase,
+                      wholesale_price: sliceWholesale,
+                      size_id: trozoSize.id,
+                      quantity: 1,
+                      discount: 0,
+                      is_half_half: false,
+                      is_slice: true,
+                      category_name: pendingProduct.category_name,
+                    })
+                    setShowPizzaOption(false)
+                    setShowExtras(true)
+                  }}
+                  className={btnClass}
+                >
+                  <span className="text-3xl flex-shrink-0">🍕</span>
+                  <div>
+                    <div className="font-semibold text-sm text-gray-800">Trozo de pizza</div>
+                    <div className="text-xs text-gray-400">{formatCLP(trozoSize.price)} · Porción individual</div>
+                  </div>
+                </button>
+              )}
+            </div>
+          )
+        })()}
       </Modal>
 
       <HalfHalfModal
