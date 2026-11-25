@@ -15,7 +15,6 @@ function ProductForm({ product, categories, onSave, onClose }) {
     description: product?.description || '',
     category_id: product?.category_id || '',
     price: product?.price || '',
-    wholesale_price: product?.wholesale_price || '',
     type: product?.type || 'elaborado',
     indirect_cost: product?.indirect_cost || '0',
     is_pizza: product?.is_pizza || false,
@@ -25,7 +24,7 @@ function ProductForm({ product, categories, onSave, onClose }) {
   const [sizes, setSizes] = useState(product?.sizes || [])
   const [loading, setLoading] = useState(false)
 
-  const addSize = () => setSizes(prev => [...prev, { name: '', price: '', wholesale_price: '' }])
+  const addSize = () => setSizes(prev => [...prev, { name: '', price: '' }])
   const removeSize = (i) => setSizes(prev => prev.filter((_, idx) => idx !== i))
   const updateSize = (i, field, val) => setSizes(prev => {
     const next = [...prev]
@@ -106,10 +105,6 @@ function ProductForm({ product, categories, onSave, onClose }) {
           <input type="number" className="input" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} min="0" />
         </div>
         <div>
-          <label className="label">Precio mayorista</label>
-          <input type="number" className="input" value={form.wholesale_price} onChange={e => setForm(f => ({ ...f, wholesale_price: e.target.value }))} min="0" />
-        </div>
-        <div>
           <label className="label">Costo indirecto</label>
           <input type="number" className="input" value={form.indirect_cost} onChange={e => setForm(f => ({ ...f, indirect_cost: e.target.value }))} min="0" />
         </div>
@@ -147,7 +142,6 @@ function ProductForm({ product, categories, onSave, onClose }) {
           <div key={i} className="flex gap-2 mb-2 items-center">
             <input placeholder="Ej: Mediana" className="input flex-1" value={size.name} onChange={e => updateSize(i, 'name', e.target.value)} />
             <input placeholder="Precio" type="number" className="input w-28" value={size.price} onChange={e => updateSize(i, 'price', e.target.value)} />
-            <input placeholder="Mayorista" type="number" className="input w-28" value={size.wholesale_price} onChange={e => updateSize(i, 'wholesale_price', e.target.value)} />
             <button onClick={() => removeSize(i)} className="text-red-400 hover:text-red-600 p-1">
               <TrashIcon className="w-4 h-4" />
             </button>

@@ -1,11 +1,7 @@
 import React from 'react'
 import { formatCLP } from '../../lib/format'
 
-function ProductCard({ product, categoryEmoji, onAdd, wholesale }) {
-  const price = wholesale && product.wholesale_price
-    ? parseFloat(product.wholesale_price)
-    : parseFloat(product.price)
-
+function ProductCard({ product, categoryEmoji, onAdd }) {
   return (
     <div
       onClick={() => onAdd(product)}
@@ -28,7 +24,7 @@ function ProductCard({ product, categoryEmoji, onAdd, wholesale }) {
         </div>
       </div>
       <div className="font-bold text-base text-brand-red mt-1">
-        {formatCLP(price)}
+        {formatCLP(product.price)}
         {product.is_pizza && (
           <span className="ml-1 text-xs text-gray-400 font-normal">🍕½</span>
         )}
@@ -37,7 +33,7 @@ function ProductCard({ product, categoryEmoji, onAdd, wholesale }) {
   )
 }
 
-export default function ProductGrid({ products, categories, selectedCategory, onCategoryChange, onSearch, searchQ, onAdd, wholesale }) {
+export default function ProductGrid({ products, categories, selectedCategory, onCategoryChange, onSearch, searchQ, onAdd }) {
   const emojiMap = Object.fromEntries(categories.map(c => [c.name, c.emoji || '']))
 
   const filtered = products.filter(p => {
@@ -90,7 +86,6 @@ export default function ProductGrid({ products, categories, selectedCategory, on
                 product={product}
                 categoryEmoji={emojiMap[product.category_name] || ''}
                 onAdd={onAdd}
-                wholesale={wholesale}
               />
             ))}
           </div>

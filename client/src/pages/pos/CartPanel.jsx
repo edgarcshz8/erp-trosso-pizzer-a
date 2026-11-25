@@ -3,7 +3,7 @@ import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { formatCLP } from '../../lib/format'
 
 export default function CartPanel({
-  items, channel, onChannelChange, wholesale, onWholesaleToggle,
+  items, channel, onChannelChange,
   onQtyChange, onRemove, onPay, onClearCart,
   customerName, onCustomerNameChange, customerAddress, onCustomerAddressChange,
   promotions = [], appliedPromo, onApplyPromo,
@@ -28,17 +28,6 @@ export default function CartPanel({
             </button>
           ))}
         </div>
-
-        {/* Wholesale toggle */}
-        <label className="flex items-center gap-3 cursor-pointer select-none">
-          <div
-            onClick={onWholesaleToggle}
-            className={`w-10 h-5 rounded-full transition-all relative ${wholesale ? 'bg-brand-red' : 'bg-gray-300'}`}
-          >
-            <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all shadow ${wholesale ? 'right-0.5' : 'left-0.5'}`} />
-          </div>
-          <span className="text-sm text-gray-600">Precio mayorista</span>
-        </label>
 
         {/* Delivery fields */}
         {channel === 'delivery' && (

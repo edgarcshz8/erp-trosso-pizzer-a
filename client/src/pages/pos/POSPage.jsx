@@ -20,7 +20,6 @@ const MAX_ORDERS = 5
 const newOrder = () => ({
   cart: [],
   channel: 'paso',
-  wholesale: false,
   customerName: '',
   customerAddress: '',
   appliedPromo: null,
@@ -64,7 +63,7 @@ export default function POSPage() {
 
   // Active order helpers
   const activeOrder = orders[activeOrderIdx]
-  const { cart, channel, wholesale, customerName, customerAddress, appliedPromo } = activeOrder
+  const { cart, channel, customerName, customerAddress, appliedPromo } = activeOrder
 
   const updateActiveOrder = (updates) => {
     setOrders(prev => prev.map((o, i) => i === activeOrderIdx ? { ...o, ...updates } : o))
@@ -79,12 +78,10 @@ export default function POSPage() {
   }
 
   const addWholeToCart = useCallback((product) => {
-    const basePrice = parseFloat(product.price)
-    const wholesalePrice = product.wholesale_price ? parseFloat(product.wholesale_price) : null
+    const price = parseFloat(product.price)
 
     setOrders(prev => {
       const order = prev[activeOrderIdx]
-      const price = order.wholesale && wholesalePrice ? wholesalePrice : basePrice
       const idx = order.cart.findIndex(i =>
         i.product_id === product.id && !i.is_half_half && !(i.extras?.length)
       )
@@ -94,8 +91,7 @@ export default function POSPage() {
             product_id: product.id,
             name: product.name,
             unit_price: price,
-            base_price: basePrice,
-            wholesale_price: wholesalePrice,
+            base_price: price,
             quantity: 1,
             discount: 0,
             is_half_half: false,
@@ -115,13 +111,8 @@ export default function POSPage() {
   }, [addWholeToCart])
 
   const handleHalfHalfConfirm = ({ half1, half2 }) => {
-    const h1Base = parseFloat(half1.price)
-    const h1Wholesale = half1.wholesale_price ? parseFloat(half1.wholesale_price) : null
-    const h2Base = parseFloat(half2.price)
-    const h2Wholesale = half2.wholesale_price ? parseFloat(half2.wholesale_price) : null
-
-    const p1 = wholesale && h1Wholesale ? h1Wholesale : h1Base
-    const p2 = wholesale && h2Wholesale ? h2Wholesale : h2Base
+    const p1 = parseFloat(half1.price)
+    const p2 = parseFloat(half2.price)
 
     setPendingCartItem({
       product_id: pendingProduct.id,
@@ -133,12 +124,10 @@ export default function POSPage() {
       is_half_half: true,
       half1_product_id: half1.id,
       half1_name: half1.name,
-      half1_base_price: h1Base,
-      half1_wholesale_price: h1Wholesale,
+      half1_base_price: p1,
       half2_product_id: half2.id,
       half2_name: half2.name,
-      half2_base_price: h2Base,
-      half2_wholesale_price: h2Wholesale,
+      half2_base_price: p2,
     })
     setShowHalfHalf(false)
     setShowExtras(true)
@@ -167,22 +156,6 @@ export default function POSPage() {
 
   const handleRemove = (idx) => {
     updateCart(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  const handleWholesaleToggle = () => {
-    const newWholesale = !wholesale
-    const updatedCart = cart.map(item => {
-      if (item.is_half_half) {
-        if (item.half1_base_price == null || item.half2_base_price == null) return item
-        const p1 = newWholesale && item.half1_wholesale_price ? item.half1_wholesale_price : item.half1_base_price
-        const p2 = newWholesale && item.half2_wholesale_price ? item.half2_wholesale_price : item.half2_base_price
-        return { ...item, unit_price: Math.max(p1, p2) + (item.extras_total || 0) }
-      }
-      if (item.base_price == null) return item
-      const newPrice = newWholesale && item.wholesale_price ? item.wholesale_price : item.base_price
-      return { ...item, unit_price: newPrice + (item.extras_total || 0) }
-    })
-    updateActiveOrder({ wholesale: newWholesale, cart: updatedCart })
   }
 
   const handlePay = () => {
@@ -216,7 +189,6 @@ export default function POSPage() {
         channel,
         payment_method: channel === 'delivery' ? null : method,
         cash_received: cashReceived,
-        wholesale,
         customer_name: customerName || null,
         customer_address: customerAddress || null,
       })
@@ -307,8 +279,6 @@ export default function POSPage() {
     items: cartWithPromos,
     channel,
     onChannelChange: (v) => updateActiveOrder({ channel: v }),
-    wholesale,
-    onWholesaleToggle: handleWholesaleToggle,
     onQtyChange: handleQtyChange,
     onRemove: handleRemove,
     onPay: handlePay,
@@ -391,7 +361,6 @@ export default function POSPage() {
             searchQ={searchQ}
             onSearch={setSearchQ}
             onAdd={addToCart}
-            wholesale={wholesale}
           />
         </div>
 
@@ -445,10 +414,7 @@ export default function POSPage() {
         <p className="text-sm text-gray-500 mb-4">¿Cómo la agregas?</p>
         {(() => {
           const trozoSize = pendingProduct?.sizes?.find(s => s.name.toLowerCase().includes('trozo'))
-          const basePrice = pendingProduct ? parseFloat(pendingProduct.price) : 0
-          const wholesalePrice = pendingProduct?.wholesale_price ? parseFloat(pendingProduct.wholesale_price) : null
-          const enteraPrice = wholesale && wholesalePrice ? wholesalePrice : basePrice
-
+          const price = pendingProduct ? parseFloat(pendingProduct.price) : 0
           const btnClass = 'flex items-center gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-brand-red hover:bg-red-50 active:scale-95 transition-all text-left w-full'
 
           return (
@@ -458,9 +424,8 @@ export default function POSPage() {
                   setPendingCartItem({
                     product_id: pendingProduct.id,
                     name: pendingProduct.name,
-                    unit_price: enteraPrice,
-                    base_price: basePrice,
-                    wholesale_price: wholesalePrice,
+                    unit_price: price,
+                    base_price: price,
                     quantity: 1,
                     discount: 0,
                     is_half_half: false,
@@ -474,7 +439,7 @@ export default function POSPage() {
                 <span className="text-3xl flex-shrink-0">🍕</span>
                 <div>
                   <div className="font-semibold text-sm text-gray-800">Pizza entera</div>
-                  <div className="text-xs text-gray-400">{formatCLP(enteraPrice)} · Un solo sabor</div>
+                  <div className="text-xs text-gray-400">{formatCLP(price)} · Un solo sabor</div>
                 </div>
               </button>
 
@@ -492,15 +457,12 @@ export default function POSPage() {
               {trozoSize && (
                 <button
                   onClick={() => {
-                    const sliceBase = parseFloat(trozoSize.price)
-                    const sliceWholesale = trozoSize.wholesale_price ? parseFloat(trozoSize.wholesale_price) : null
-                    const slicePrice = wholesale && sliceWholesale ? sliceWholesale : sliceBase
+                    const slicePrice = parseFloat(trozoSize.price)
                     setPendingCartItem({
                       product_id: pendingProduct.id,
                       name: `Trozo · ${pendingProduct.name}`,
                       unit_price: slicePrice,
-                      base_price: sliceBase,
-                      wholesale_price: sliceWholesale,
+                      base_price: slicePrice,
                       size_id: trozoSize.id,
                       quantity: 1,
                       discount: 0,
