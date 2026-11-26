@@ -294,6 +294,31 @@ function ShiftDetailModal({ shift, onClose }) {
             </div>
           )}
 
+          {/* Items summary */}
+          {detail.items_summary?.length > 0 && (
+            <div>
+              <div className="font-semibold text-sm text-gray-700 mb-2">Venta por producto</div>
+              <div className="rounded-xl overflow-hidden border border-gray-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50"><tr>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Producto</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Cant.</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
+                  </tr></thead>
+                  <tbody>
+                    {detail.items_summary.map((item, i) => (
+                      <tr key={i} className="border-t border-gray-100">
+                        <td className="px-4 py-2.5 font-medium text-gray-800">{item.name}</td>
+                        <td className="px-4 py-2.5 text-right text-gray-600">{parseInt(item.qty_sold)}</td>
+                        <td className="px-4 py-2.5 text-right font-semibold text-brand-red">{formatCLP(item.revenue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Sales list */}
           <div>
             <div className="font-semibold text-sm text-gray-700 mb-2">Ventas del turno ({detail.sales.length})</div>

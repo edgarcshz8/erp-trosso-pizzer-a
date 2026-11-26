@@ -80,10 +80,23 @@ router.get('/:id', requireAuth, async (req, res) => {
     const ingresos = movResult.rows.filter(m => m.type === 'ingreso').reduce((s, m) => s + parseFloat(m.amount), 0);
     const retiros = movResult.rows.filter(m => m.type === 'retiro').reduce((s, m) => s + parseFloat(m.amount), 0);
 
+    // Products sold in this shift
+    const itemsResult = await pool.query(`
+      SELECT p.name, SUM(si.quantity) as qty_sold,
+        SUM(si.unit_price * si.quantity - COALESCE(si.discount, 0)) as revenue
+      FROM sale_items si
+      JOIN products p ON si.product_id = p.id
+      JOIN sales sa ON si.sale_id = sa.id
+      WHERE sa.shift_id = $1 AND sa.status = 'paid'
+      GROUP BY p.id, p.name
+      ORDER BY revenue DESC
+    `, [req.params.id]);
+
     res.json({
       shift: shiftResult.rows[0],
       sales: salesResult.rows,
       movements: movResult.rows,
+      items_summary: itemsResult.rows,
       totals: {
         by_method: totalsByCash,
         total_sales: Object.values(totalsByCash).reduce((s, v) => s + v, 0),

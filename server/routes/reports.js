@@ -33,7 +33,7 @@ router.get('/sales', requireAdmin, async (req, res) => {
       WHERE sa.status = 'paid' ${dateFilter}
     `, params);
 
-    // Top products
+    // Top products (all, ordered by revenue)
     const topProducts = await pool.query(`
       SELECT p.name, SUM(si.quantity) as qty_sold, SUM(si.unit_price * si.quantity - si.discount) as revenue
       FROM sale_items si
@@ -42,7 +42,6 @@ router.get('/sales', requireAdmin, async (req, res) => {
       WHERE sa.status = 'paid' ${dateFilter}
       GROUP BY p.id, p.name
       ORDER BY revenue DESC
-      LIMIT 10
     `, params);
 
     // Daily breakdown

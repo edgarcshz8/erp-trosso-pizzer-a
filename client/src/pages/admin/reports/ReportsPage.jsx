@@ -103,6 +103,28 @@ function SalesReport({ dateFrom, dateTo }) {
         </div>
       </div>
 
+      {top_products?.length > 0 && (
+        <div className="card overflow-hidden p-0">
+          <div className="px-4 py-3 border-b border-gray-100 font-semibold text-sm text-gray-700">Venta por producto</div>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50"><tr>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Producto</th>
+              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-400 uppercase">Cant.</th>
+              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-400 uppercase">Total</th>
+            </tr></thead>
+            <tbody>
+              {top_products.map((p, i) => (
+                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-2.5 font-medium text-gray-800">{p.name}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-600">{parseInt(p.qty_sold)}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-brand-red">{formatCLP(p.revenue)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {top_extras?.length > 0 && (
         <div className="card overflow-hidden p-0">
           <div className="px-4 py-3 border-b border-gray-100 font-semibold text-sm text-gray-700">Extras vendidos</div>
