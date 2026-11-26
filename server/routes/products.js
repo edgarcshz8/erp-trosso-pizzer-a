@@ -14,7 +14,17 @@ router.get('/', requireAuth, async (req, res) => {
     let query = `
       SELECT p.*, c.name as category_name,
         json_agg(DISTINCT jsonb_build_object('id', ps.id, 'name', ps.name, 'price', ps.price, 'wholesale_price', ps.wholesale_price))
-          FILTER (WHERE ps.id IS NOT NULL) as sizes
+          FILTER (WHERE ps.id IS NOT NULL) as sizes,
+        CASE
+          WHEN p.type = 'reventa' THEN true
+          WHEN NOT EXISTS (SELECT 1 FROM recipes r WHERE r.product_id = p.id AND r.size_id IS NULL) THEN true
+          WHEN EXISTS (
+            SELECT 1 FROM recipes r
+            JOIN supplies s ON r.supply_id = s.id
+            WHERE r.product_id = p.id AND r.size_id IS NULL AND s.stock < r.quantity
+          ) THEN false
+          ELSE true
+        END as in_stock
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN product_sizes ps ON ps.product_id = p.id

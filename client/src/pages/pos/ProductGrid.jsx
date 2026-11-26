@@ -39,7 +39,7 @@ export default function ProductGrid({ products, categories, selectedCategory, on
   const filtered = products.filter(p => {
     const matchCat = selectedCategory === 'Todas' || p.category_name === selectedCategory
     const matchSearch = !searchQ || p.name.toLowerCase().includes(searchQ.toLowerCase())
-    return matchCat && matchSearch && p.active !== false
+    return matchCat && matchSearch && p.active !== false && p.in_stock !== false
   })
 
   return (
