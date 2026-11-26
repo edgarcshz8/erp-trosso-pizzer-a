@@ -8,11 +8,13 @@ import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { formatCLP } from '../../../lib/format'
 import LoadingSpinner from '../../../components/LoadingSpinner'
 
-function ExtraForm({ extra, onSave, onClose }) {
+function ExtraForm({ extra, supplies, onSave, onClose }) {
   const [form, setForm] = useState({
     name: extra?.name || '',
     price: extra?.price || '',
     price_type: extra?.price_type || 'fixed',
+    supply_id: extra?.supply_id || '',
+    quantity: extra?.quantity ?? 1,
     active: extra?.active !== false,
   })
   const [loading, setLoading] = useState(false)
@@ -41,7 +43,20 @@ function ExtraForm({ extra, onSave, onClose }) {
       footer={<><button onClick={onClose} className="btn-ghost">Cancelar</button><button onClick={handleSubmit} disabled={loading} className="btn-primary">{loading ? 'Guardando...' : 'Guardar'}</button></>}>
       <div className="space-y-3">
         <div><label className="label">Nombre del ingrediente *</label><input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Mozzarella extra" /></div>
-        <div><label className="label">Precio</label><input type="number" className="input" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} min="0" /></div>
+        <div><label className="label">Precio de venta</label><input type="number" className="input" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} min="0" /></div>
+        <div>
+          <label className="label">Insumo vinculado (para costo y stock)</label>
+          <select className="input" value={form.supply_id} onChange={e => setForm(f => ({ ...f, supply_id: e.target.value }))}>
+            <option value="">Sin insumo</option>
+            {supplies.map(s => <option key={s.id} value={s.id}>{s.name} ({s.unit})</option>)}
+          </select>
+        </div>
+        {form.supply_id && (
+          <div>
+            <label className="label">Cantidad de insumo por unidad</label>
+            <input type="number" className="input" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} min="0" step="0.001" />
+          </div>
+        )}
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4 accent-brand-red" />
           <span className="text-sm text-gray-700">Activo</span>
@@ -53,6 +68,7 @@ function ExtraForm({ extra, onSave, onClose }) {
 
 export default function ExtrasPage() {
   const [extras, setExtras] = useState([])
+  const [supplies, setSupplies] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null)
   const [showForm, setShowForm] = useState(false)
@@ -60,8 +76,9 @@ export default function ExtrasPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const r = await api.get('/extras')
-      setExtras(r.data)
+      const [eRes, sRes] = await Promise.all([api.get('/extras'), api.get('/supplies?active=true')])
+      setExtras(eRes.data)
+      setSupplies(sRes.data)
     } catch {}
     setLoading(false)
   }
@@ -88,6 +105,7 @@ export default function ExtrasPage() {
             <thead className="bg-gray-50 border-b"><tr>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Ingrediente</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Precio</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Insumo / Cantidad</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
               <th className="px-4 py-3"></th>
             </tr></thead>
@@ -96,6 +114,9 @@ export default function ExtrasPage() {
                 <tr key={e.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-sm text-gray-800">{e.name}</td>
                   <td className="px-4 py-3 text-right font-semibold text-sm text-brand-red">{formatCLP(e.price)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {e.supply_name ? `${e.supply_name} × ${parseFloat(e.quantity)}` : <span className="text-gray-300">—</span>}
+                  </td>
                   <td className="px-4 py-3"><Badge variant={e.active ? 'success' : 'gray'}>{e.active ? 'Activo' : 'Inactivo'}</Badge></td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
@@ -105,13 +126,13 @@ export default function ExtrasPage() {
                   </td>
                 </tr>
               ))}
-              {extras.length === 0 && <tr><td colSpan={4} className="py-8 text-center text-gray-400">No hay extras registrados</td></tr>}
+              {extras.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-gray-400">No hay extras registrados</td></tr>}
             </tbody>
           </table>
         </div>
       )}
 
-      {showForm && <ExtraForm extra={editing} onSave={() => { setShowForm(false); load() }} onClose={() => setShowForm(false)} />}
+      {showForm && <ExtraForm extra={editing} supplies={supplies} onSave={() => { setShowForm(false); load() }} onClose={() => setShowForm(false)} />}
     </Layout>
   )
 }

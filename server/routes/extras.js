@@ -7,13 +7,18 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { active } = req.query;
-    let query = 'SELECT * FROM extra_ingredients WHERE 1=1';
+    let query = `
+      SELECT ei.*, s.name as supply_name
+      FROM extra_ingredients ei
+      LEFT JOIN supplies s ON ei.supply_id = s.id
+      WHERE 1=1
+    `;
     const params = [];
     if (active !== undefined) {
-      query += ' AND active = $1';
+      query += ' AND ei.active = $1';
       params.push(active === 'true');
     }
-    query += ' ORDER BY name ASC';
+    query += ' ORDER BY ei.name ASC';
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
@@ -25,11 +30,11 @@ router.get('/', requireAuth, async (req, res) => {
 // POST /api/extras
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { name, price, price_type } = req.body;
+    const { name, price, price_type, supply_id, quantity } = req.body;
     if (!name) return res.status(400).json({ error: 'Nombre requerido' });
     const result = await pool.query(
-      'INSERT INTO extra_ingredients (name, price, price_type) VALUES ($1, $2, $3) RETURNING *',
-      [name, price || 0, price_type || 'fixed']
+      'INSERT INTO extra_ingredients (name, price, price_type, supply_id, quantity) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, price || 0, price_type || 'fixed', supply_id || null, quantity || 1]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -42,10 +47,14 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, price_type, active } = req.body;
+    const { name, price, price_type, active, supply_id, quantity } = req.body;
     const result = await pool.query(
-      'UPDATE extra_ingredients SET name = COALESCE($1, name), price = COALESCE($2, price), price_type = COALESCE($3, price_type), active = COALESCE($4, active) WHERE id = $5 RETURNING *',
-      [name, price, price_type, active, id]
+      `UPDATE extra_ingredients SET
+        name = COALESCE($1, name), price = COALESCE($2, price),
+        price_type = COALESCE($3, price_type), active = COALESCE($4, active),
+        supply_id = $5, quantity = COALESCE($6, quantity)
+       WHERE id = $7 RETURNING *`,
+      [name, price, price_type, active, supply_id || null, quantity, id]
     );
     if (!result.rows[0]) return res.status(404).json({ error: 'Extra no encontrado' });
     res.json(result.rows[0]);

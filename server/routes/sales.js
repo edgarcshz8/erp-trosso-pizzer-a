@@ -181,13 +181,20 @@ router.post('/', requireAuth, async (req, res) => {
           item.itemDiscount || 0, item.is_half_half || false,
           item.half1_product_id || null, item.half2_product_id || null, item.notes || null]);
 
-      // Insert extras
+      // Insert extras and deduct supply stock
       if (item.extras && item.extras.length > 0) {
         for (const extra of item.extras) {
+          const extraQty = extra.quantity || 1;
           await client.query(
             'INSERT INTO sale_item_extras (sale_item_id, extra_id, quantity, unit_price) VALUES ($1, $2, $3, $4)',
-            [itemResult.rows[0].id, extra.id, extra.quantity || 1, extra.price || 0]
+            [itemResult.rows[0].id, extra.id, extraQty, extra.price || 0]
           );
+          // Deduct supply stock if the extra has a linked supply
+          await client.query(`
+            UPDATE supplies SET stock = GREATEST(0, stock - ($1 * ei.quantity))
+            FROM extra_ingredients ei
+            WHERE ei.id = $2 AND ei.supply_id = supplies.id AND ei.supply_id IS NOT NULL
+          `, [extraQty, extra.id]);
         }
       }
 

@@ -139,11 +139,23 @@ router.get('/income-statement', requireAdmin, async (req, res) => {
       FROM sales WHERE status = 'paid' AND created_at >= $1 AND created_at <= $2
     `, [startDate, endDate + ' 23:59:59']);
 
-    // COGS (approximate using stock movements)
+    // COGS from recipes (stock movements of type venta)
     const cogsResult = await pool.query(`
       SELECT COALESCE(SUM(ABS(quantity) * COALESCE(unit_cost, 0)), 0) as cogs
       FROM stock_movements
       WHERE type = 'venta' AND created_at >= $1 AND created_at <= $2
+    `, [startDate, endDate + ' 23:59:59']);
+
+    // COGS from extras sold (supply cost × quantity used)
+    const extrasCogs = await pool.query(`
+      SELECT COALESCE(SUM(sie.quantity * ei.quantity * s.avg_cost), 0) as cogs
+      FROM sale_item_extras sie
+      JOIN extra_ingredients ei ON sie.extra_id = ei.id
+      JOIN supplies s ON ei.supply_id = s.id
+      JOIN sale_items si ON sie.sale_item_id = si.id
+      JOIN sales sa ON si.sale_id = sa.id
+      WHERE sa.status = 'paid' AND sa.created_at >= $1 AND sa.created_at <= $2
+      AND ei.supply_id IS NOT NULL
     `, [startDate, endDate + ' 23:59:59']);
 
     // Expenses
@@ -154,7 +166,7 @@ router.get('/income-statement', requireAdmin, async (req, res) => {
 
     const revenue = parseFloat(revenueResult.rows[0].revenue);
     const discounts = parseFloat(revenueResult.rows[0].discounts);
-    const cogs = parseFloat(cogsResult.rows[0].cogs);
+    const cogs = parseFloat(cogsResult.rows[0].cogs) + parseFloat(extrasCogs.rows[0].cogs);
     const expenses = parseFloat(expTotal.rows[0].total);
     const grossProfit = revenue - cogs;
     const netProfit = grossProfit - expenses;
