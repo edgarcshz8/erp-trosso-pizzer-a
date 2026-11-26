@@ -8,7 +8,7 @@ import Badge from '../../../components/Badge'
 import CloseShiftModal from '../../../components/CloseShiftModal'
 import { formatCLP, formatDateTime } from '../../../lib/format'
 import LoadingSpinner from '../../../components/LoadingSpinner'
-import { ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { ExclamationTriangleIcon, CheckCircleIcon, TrashIcon } from '@heroicons/react/24/outline'
 
 function OpenShiftModal({ open, onClose, onSave }) {
   const [amount, setAmount] = useState('')
@@ -161,9 +161,20 @@ export default function ShiftsPage() {
 function ShiftDetailModal({ shift, onClose }) {
   const [detail, setDetail] = useState(null)
 
-  useEffect(() => {
-    api.get(`/shifts/${shift.id}`).then(r => setDetail(r.data)).catch(() => {})
-  }, [shift.id])
+  const load = () => api.get(`/shifts/${shift.id}`).then(r => setDetail(r.data)).catch(() => {})
+
+  useEffect(() => { load() }, [shift.id])
+
+  const handleDeleteSale = async (saleId) => {
+    if (!confirm('¿Eliminar esta venta? Esta acción no se puede deshacer.')) return
+    try {
+      await api.delete(`/sales/${saleId}`)
+      toast.success('Venta eliminada')
+      load()
+    } catch {
+      toast.error('Error al eliminar venta')
+    }
+  }
 
   const reconciliation = detail ? [
     { label: 'Efectivo',      expected: detail.totals.expected_cash || 0,                        counted: detail.shift.counted_cash },
@@ -328,6 +339,7 @@ function ShiftDetailModal({ shift, onClose }) {
                   <th className="text-left pb-2 text-xs text-gray-400">Hora</th>
                   <th className="text-left pb-2 text-xs text-gray-400">Método</th>
                   <th className="text-right pb-2 text-xs text-gray-400">Total</th>
+                  <th className="pb-2"></th>
                 </tr></thead>
                 <tbody>
                   {detail.sales.map(s => (
@@ -335,6 +347,11 @@ function ShiftDetailModal({ shift, onClose }) {
                       <td className="py-1.5 text-gray-500">{new Date(s.created_at).toLocaleTimeString('es-CL')}</td>
                       <td className="py-1.5 text-gray-500 capitalize">{s.payment_method || '-'}</td>
                       <td className="py-1.5 text-right font-medium">{formatCLP(s.total)}</td>
+                      <td className="py-1.5 text-right">
+                        <button onClick={() => handleDeleteSale(s.id)} className="p-1 hover:bg-red-50 rounded text-gray-300 hover:text-red-500 transition-colors">
+                          <TrashIcon className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

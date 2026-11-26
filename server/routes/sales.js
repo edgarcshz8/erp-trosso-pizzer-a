@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 async function deductStock(client, productId, sizeId, quantity, saleId, userId, isHalfHalf = false) {
   // Get product type
@@ -251,6 +251,22 @@ router.patch('/:id/pay', requireAuth, async (req, res) => {
     `, [payment_method, cash_received || null, changeGiven, shiftId, id]);
 
     res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error de servidor' });
+  }
+});
+
+// DELETE /api/sales/:id
+router.delete('/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM sales WHERE id = $1', [id]);
+    if (!result.rows[0]) return res.status(404).json({ error: 'Venta no encontrada' });
+
+    // CASCADE deletes sale_items and sale_item_extras
+    await pool.query('DELETE FROM sales WHERE id = $1', [id]);
+    res.json({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error de servidor' });
