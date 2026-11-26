@@ -143,7 +143,11 @@ export default function PromotionsPage() {
                   <td className="px-4 py-3 text-sm text-gray-500">
                     {p.start_date && p.end_date ? `${formatDate(p.start_date)} - ${formatDate(p.end_date)}` : 'Sin límite'}
                   </td>
-                  <td className="px-4 py-3"><Badge variant={p.active ? 'success' : 'gray'}>{p.active ? 'Activa' : 'Inactiva'}</Badge></td>
+                  <td className="px-4 py-3">{(() => {
+                    const expired = p.end_date && new Date(p.end_date) < new Date(new Date().toDateString())
+                    if (expired) return <Badge variant="gray">Caducada</Badge>
+                    return <Badge variant={p.active ? 'success' : 'gray'}>{p.active ? 'Activa' : 'Inactiva'}</Badge>
+                  })()}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => { setEditing(p); setShowForm(true) }} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"><PencilIcon className="w-4 h-4" /></button>
