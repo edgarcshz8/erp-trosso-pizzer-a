@@ -199,6 +199,20 @@ function ShiftDetailModal({ shift, onClose }) {
             </div>
           )}
 
+          {/* Timestamps */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 rounded-xl p-3">
+              <div className="text-xs text-gray-400 mb-0.5">Apertura</div>
+              <div className="font-semibold text-sm text-gray-700">{formatDateTime(detail.shift.opened_at)}</div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <div className="text-xs text-gray-400 mb-0.5">Cierre</div>
+              <div className="font-semibold text-sm text-gray-700">
+                {detail.shift.closed_at ? formatDateTime(detail.shift.closed_at) : <span className="text-emerald-600">Turno abierto</span>}
+              </div>
+            </div>
+          </div>
+
           {/* Summary stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-50 rounded-xl p-3 text-center">
