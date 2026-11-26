@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS products (
   is_pizza BOOLEAN DEFAULT false,
   half_half_rule VARCHAR(20) DEFAULT 'expensive' CHECK (half_half_rule IN ('expensive','average')),
   active BOOLEAN DEFAULT true,
+  stock NUMERIC(10,3) DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

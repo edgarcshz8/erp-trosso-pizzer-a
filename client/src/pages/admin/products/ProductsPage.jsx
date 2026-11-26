@@ -17,6 +17,7 @@ function ProductForm({ product, categories, onSave, onClose }) {
     price: product?.price || '',
     type: product?.type || 'elaborado',
     indirect_cost: product?.indirect_cost || '0',
+    stock: product?.stock ?? '',
     is_pizza: product?.is_pizza || false,
     active: product?.active !== false,
   })
@@ -108,6 +109,12 @@ function ProductForm({ product, categories, onSave, onClose }) {
           <label className="label">Costo indirecto</label>
           <input type="number" className="input" value={form.indirect_cost} onChange={e => setForm(f => ({ ...f, indirect_cost: e.target.value }))} min="0" />
         </div>
+        {form.type === 'reventa' && (
+          <div>
+            <label className="label">Stock actual</label>
+            <input type="number" className="input" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} min="0" step="1" />
+          </div>
+        )}
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.is_pizza} onChange={e => setForm(f => ({ ...f, is_pizza: e.target.checked }))} className="w-4 h-4 accent-brand-red" />
@@ -240,6 +247,11 @@ export default function ProductsPage() {
                     <td className="px-4 py-3 text-sm text-gray-600">{p.category_name || '-'}</td>
                     <td className="px-4 py-3">
                       <Badge variant={p.type === 'elaborado' ? 'info' : 'gray'}>{p.type}</Badge>
+                      {p.type === 'reventa' && (
+                        <span className={`ml-2 text-xs font-medium ${parseFloat(p.stock) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                          Stock: {parseFloat(p.stock ?? 0)}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-sm">{formatCLP(p.price)}</td>
                     <td className="px-4 py-3">

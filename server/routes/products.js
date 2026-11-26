@@ -16,7 +16,7 @@ router.get('/', requireAuth, async (req, res) => {
         json_agg(DISTINCT jsonb_build_object('id', ps.id, 'name', ps.name, 'price', ps.price, 'wholesale_price', ps.wholesale_price))
           FILTER (WHERE ps.id IS NOT NULL) as sizes,
         CASE
-          WHEN p.type = 'reventa' THEN true
+          WHEN p.type = 'reventa' THEN (p.stock > 0)
           WHEN NOT EXISTS (SELECT 1 FROM recipes r WHERE r.product_id = p.id AND r.size_id IS NULL) THEN true
           WHEN EXISTS (
             SELECT 1 FROM recipes r
@@ -71,7 +71,7 @@ router.get('/:id', requireAuth, async (req, res) => {
 // POST /api/products
 router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
   try {
-    const { name, category_id, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, description } = req.body;
+    const { name, category_id, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, description, stock } = req.body;
     if (!name || !type) return res.status(400).json({ error: 'Nombre y tipo requeridos' });
 
     const image_url = req.file
@@ -79,11 +79,11 @@ router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
       : null;
 
     const result = await pool.query(`
-      INSERT INTO products (name, category_id, image_url, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, description)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *
+      INSERT INTO products (name, category_id, image_url, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, description, stock)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *
     `, [name, category_id || null, image_url, price || 0, wholesale_price || null,
         type, indirect_cost || 0, is_pizza === 'true' || is_pizza === true, half_half_rule || 'expensive',
-        description || null]);
+        description || null, stock || 0]);
 
     // Handle sizes
     const sizes = req.body.sizes ? JSON.parse(req.body.sizes) : [];
@@ -105,7 +105,7 @@ router.post('/', requireAdmin, upload.single('image'), async (req, res) => {
 router.put('/:id', requireAdmin, upload.single('image'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category_id, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, active, description } = req.body;
+    const { name, category_id, price, wholesale_price, type, indirect_cost, is_pizza, half_half_rule, active, description, stock } = req.body;
 
     const existing = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
     if (!existing.rows[0]) return res.status(404).json({ error: 'Producto no encontrado' });
@@ -128,12 +128,14 @@ router.put('/:id', requireAdmin, upload.single('image'), async (req, res) => {
         is_pizza = COALESCE($8, is_pizza),
         half_half_rule = COALESCE($9, half_half_rule),
         active = COALESCE($10, active),
-        description = $11
+        description = $11,
+        stock = COALESCE($13, stock)
       WHERE id = $12 RETURNING *
     `, [name, category_id || null, image_url, price, wholesale_price || null,
         type, indirect_cost, is_pizza !== undefined ? (is_pizza === 'true' || is_pizza === true) : existing.rows[0].is_pizza,
         half_half_rule, active !== undefined ? (active === 'true' || active === true) : existing.rows[0].active,
-        description !== undefined ? (description || null) : existing.rows[0].description, id]);
+        description !== undefined ? (description || null) : existing.rows[0].description, id,
+        stock !== undefined ? parseFloat(stock) : null]);
 
     // Update sizes if provided
     if (req.body.sizes) {

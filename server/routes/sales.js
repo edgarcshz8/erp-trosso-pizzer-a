@@ -34,13 +34,10 @@ async function deductStock(client, productId, sizeId, quantity, saleId, userId, 
       );
     }
   } else if (product.type === 'reventa') {
-    // Find matching supply (1 unit deducted per unit sold)
-    // For reventa, look for a supply with same name or linked by convention
-    // We just log it, actual supply tracking needs setup
     await client.query(
-      'INSERT INTO stock_movements (supply_id, type, quantity, reason, reference_id, created_by) VALUES (NULL, $1, $2, $3, $4, $5)',
-      ['venta', -quantity, `Reventa producto #${productId}, Venta #${saleId}`, saleId, userId]
-    ).catch(() => {}); // Ignore if fails (NULL supply_id)
+      'UPDATE products SET stock = GREATEST(0, stock - $1) WHERE id = $2',
+      [quantity, productId]
+    );
   }
 }
 
