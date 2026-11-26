@@ -26,7 +26,7 @@ function SalesReport({ dateFrom, dateTo }) {
   if (loading) return <LoadingSpinner />
   if (!data) return <div className="text-gray-400 text-center py-8">Error al cargar datos</div>
 
-  const { summary, top_products, daily } = data
+  const { summary, top_products, daily, top_extras } = data
   const dailyData = daily?.map(d => ({
     date: new Date(d.date).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }),
     total: parseFloat(d.total),
@@ -102,6 +102,28 @@ function SalesReport({ dateFrom, dateTo }) {
           ) : <div className="text-gray-300 text-sm text-center py-8">Sin datos</div>}
         </div>
       </div>
+
+      {top_extras?.length > 0 && (
+        <div className="card overflow-hidden p-0">
+          <div className="px-4 py-3 border-b border-gray-100 font-semibold text-sm text-gray-700">Extras vendidos</div>
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50"><tr>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Ingrediente extra</th>
+              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-400 uppercase">Cantidad</th>
+              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-400 uppercase">Total recaudado</th>
+            </tr></thead>
+            <tbody>
+              {top_extras.map((e, i) => (
+                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-2.5 font-medium text-gray-800">{e.name}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-600">{parseInt(e.qty_sold)}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-brand-red">{formatCLP(e.revenue)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {dailyData.length > 0 && (
         <div className="card">

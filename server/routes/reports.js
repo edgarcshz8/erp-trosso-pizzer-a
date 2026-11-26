@@ -54,10 +54,23 @@ router.get('/sales', requireAdmin, async (req, res) => {
       ORDER BY date ASC
     `, params);
 
+    // Extras sold
+    const extrasResult = await pool.query(`
+      SELECT ei.name, SUM(sie.quantity) as qty_sold, SUM(sie.quantity * sie.unit_price) as revenue
+      FROM sale_item_extras sie
+      JOIN extra_ingredients ei ON sie.extra_id = ei.id
+      JOIN sale_items si ON sie.sale_item_id = si.id
+      JOIN sales sa ON si.sale_id = sa.id
+      WHERE sa.status = 'paid' ${dateFilter}
+      GROUP BY ei.id, ei.name
+      ORDER BY qty_sold DESC
+    `, params);
+
     res.json({
       summary: totalResult.rows[0],
       top_products: topProducts.rows,
-      daily: dailyResult.rows
+      daily: dailyResult.rows,
+      top_extras: extrasResult.rows
     });
   } catch (err) {
     console.error(err);
